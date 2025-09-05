@@ -1,0 +1,2 @@
+void PatchInfiniteJump();
+void UnpatchInfiniteJump();
