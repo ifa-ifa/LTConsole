@@ -90,9 +90,10 @@ void GameData::setMaxHpMp()
     PlayerSaveData* save = LunarTear::Get().Game().GetPlayerSaveData();
 
     if (params) {
-        params->maxHP = std::numeric_limits<int>::max();
+        params->maxHP = 1000000000;
         params->maxMP = 1000000000;
-        save->current_hp = std::numeric_limits<int>::max();
+
+        save->current_hp = 1000000000;
         save->current_mp = 1000000000;
     }
 }

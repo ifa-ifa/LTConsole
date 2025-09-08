@@ -376,9 +376,13 @@ void Atlas::populatePointsTable() {
 }
 
 void Atlas::onMapSearchChanged(const QString& text) {
+    QString searchText = text;
+    searchText.replace(' ', '_').replace('-', '_');
     for (int i = 0; i < m_mapList->count(); ++i) {
         QListWidgetItem* item = m_mapList->item(i);
-        item->setHidden(!item->text().contains(text, Qt::CaseInsensitive));
+        QString itemText = item->text();
+        itemText.replace(' ', '_').replace('-', '_');
+        item->setHidden(!itemText.contains(searchText, Qt::CaseInsensitive));
     }
 }
 
