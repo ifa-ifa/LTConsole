@@ -44,7 +44,16 @@ void LunarTearPluginInit(const LunarTearAPI* api, LT_PluginHandle handle)
     g_handle = handle;
 
     LunarTear::Init(api, handle);
+    if (LunarTear::Get().GetRawAPI()->api_version < LUNAR_TEAR_API_VERSION) {
 
+        std::string msg =
+            std::string("Unsupported Lunar Tear version. You need at least ") +
+            LUNAR_TEAR_VERSION_STRING;
+
+        MessageBoxA(NULL, msg.c_str(), "LT Console", MB_OK | MB_ICONERROR);
+
+        return;
+    }
 
     LT_LuaCFunc fLoadString = (LT_LuaCFunc)(LunarTear::Get().Game().GetProcessBaseAddress() + 0x3d92b0); // luaB_loadstring
     LunarTear::Get().RegisterLuaCFunc("_ifaifa_LTCon_loadstring", fLoadString);
@@ -92,6 +101,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 
 int main(int argc, char** argv) {
+
     StartUI(false);
 
     return 0;

@@ -37,7 +37,6 @@ const QTransform& MapView::getViewTransform() const
     return m_transform;
 }
 
-// --- NEW METHOD ---
 void MapView::resetAndCenterView()
 {
     m_transform.reset();
@@ -46,26 +45,22 @@ void MapView::resetAndCenterView()
         return;
     }
 
-    // Get widget and pixmap dimensions
     const QSize widgetSize = this->size();
     const QSize pixmapSize = m_mapPixmap.size();
 
-    // Calculate the scale factor to fit the image inside the widget
     qreal scaleX = (qreal)widgetSize.width() / pixmapSize.width();
     qreal scaleY = (qreal)widgetSize.height() / pixmapSize.height();
-    qreal scale = qMin(scaleX, scaleY); // Use the smaller scale to ensure it fits completely
+    qreal scale = qMin(scaleX, scaleY); 
 
-    // Calculate the translation needed to center the scaled image
     qreal scaledWidth = pixmapSize.width() * scale;
     qreal scaledHeight = pixmapSize.height() * scale;
     qreal tx = (widgetSize.width() - scaledWidth) / 2.0;
     qreal ty = (widgetSize.height() - scaledHeight) / 2.0;
 
-    // Apply the new transform
     m_transform.translate(tx, ty);
     m_transform.scale(scale, scale);
 
-    update(); // Trigger a repaint with the new view
+    update(); 
 }
 
 void MapView::enterCalibrationMode()
@@ -86,7 +81,6 @@ void MapView::leaveCalibrationMode()
     style()->polish(this);
 }
 
-// --- MODIFIED: When view is re-locked, it resets to the optimal view ---
 void MapView::onViewLockToggled(bool locked)
 {
     m_isViewLocked = locked;
@@ -144,19 +138,16 @@ void MapView::paintEvent(QPaintEvent* event)
     }
 }
 
-// --- NEW OVERRIDE IMPLEMENTATION ---
 void MapView::resizeEvent(QResizeEvent* event)
 {
-    QWidget::resizeEvent(event); // Pass the event to the base class
+    QWidget::resizeEvent(event); 
     if (m_isViewLocked) {
-        // If the view is locked, we want it to intelligently resize
         resetAndCenterView();
     }
-    // If the view is unlocked, we let the user's pan/zoom state persist,
-    // even though it might look strange after a resize. When they re-lock, it will fix itself.
+
 }
 
-// --- UNCHANGED METHODS BELOW ---
+
 void MapView::wheelEvent(QWheelEvent* event)
 {
     if (m_isViewLocked) return;

@@ -458,7 +458,6 @@ void Atlas::onTeleportClicked()
     const QString targetMapId = m_currentMapId;
     const QString playerCurrentMapId = GameData::instance().getCurrentPhase();
 
-    // The confirmation box is still good UX.
     if (targetMapId != playerCurrentMapId) {
         int choice = QMessageBox::question(this, "Confirm Map Change",
             QString("You are about to teleport from '%1' to '%2'.\nThis will trigger a loading screen.\n\nContinue?").arg(playerCurrentMapId, targetMapId),
@@ -472,7 +471,6 @@ void Atlas::onTeleportClicked()
     qInfo() << "Initiating teleport to" << targetMapId << "at" << point.pos;
     float currentRot = GameData::instance().getPlayerRotationY();
 
-    // This is now the only call we need. It kicks off the entire Lua-side process.
     GameData::instance().teleportToPoint(targetMapId, point.pos, currentRot);
 }
 

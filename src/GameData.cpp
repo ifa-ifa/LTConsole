@@ -7,6 +7,19 @@
 
 constexpr float PI = 3.1415926535f;
 
+struct CameraMatrix {
+    float m[4][4];
+};
+
+namespace {
+
+    const CameraMatrix* getCameraMatrix() {
+        uintptr_t camManagerAddr = LunarTear::Get().Game().GetProcessBaseAddress() + 0x32e7a00;
+        if (!camManagerAddr) return nullptr;
+        return (const CameraMatrix*)(camManagerAddr + 0x240);
+    }
+}
+
 GameData& GameData::instance()
 {
     static GameData s_instance;
@@ -16,8 +29,15 @@ GameData& GameData::instance()
 
 bool GameData::isGameActive()
 {
-    return LunarTear::Get().Game().GetActorPlayable() != nullptr;
+
+    try {
+        return LunarTear::Get().Game().GetActorPlayable() != nullptr;
+    }
+    catch (const LunarTearUninitializedError& e) {
+        return false;
+    }
 }
+
 
 QString GameData::getCurrentPhase()
 {
@@ -76,6 +96,46 @@ void GameData::setPlayerPosition(const QVector3D& pos, float rotY)
     actor->rotationVal3 = sin(radians);
     actor->rotationVal4 = cos(radians);
 }
+
+
+float GameData::getCameraYaw()
+{
+    const CameraMatrix* matrix = getCameraMatrix();
+    if (!matrix) return 0.0f;
+
+    // The "forward" vector is the third column of the camera's transformation matrix.
+    // We can treat the 4x4 matrix as a flat array of 16 floats.
+    // The forward vector's components are at indices 8, 9, and 10.
+    const float* matrixData = &(matrix->m[0][0]);
+    float forwardX = matrixData[8];
+    float forwardZ = matrixData[10];
+
+
+
+    return atan2f(forwardX, forwardZ);
+}
+
+// NEW FUNCTION IMPLEMENTATION
+float GameData::getCameraPitch()
+{
+    const CameraMatrix* matrix = getCameraMatrix();
+    if (!matrix) return 0.0f;
+
+    // Extract all three components of the forward vector (3rd column).
+    const float* matrixData = &(matrix->m[0][0]);
+    float forwardX = matrixData[8];
+    float forwardY = matrixData[9];
+    float forwardZ = matrixData[10];
+
+    // Calculate the length of the forward vector on the horizontal (X-Z) plane.
+    float horizontalDistance = sqrtf(forwardX * forwardX + forwardZ * forwardZ);
+
+    // Calculate pitch using the standard formula, which matches the reversed code.
+    // This gives the angle of the camera looking up or down.
+    return atan2f(-forwardY, horizontalDistance);
+}
+
+
 
 
 void GameData::setInvincible(bool enabled)

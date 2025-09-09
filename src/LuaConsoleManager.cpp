@@ -67,7 +67,7 @@ void LuaConsoleManager::enqueueCommand(uint64_t terminalId, const QString& comma
             );
         }
         // The command will sit in the queue, but the UI is now unlocked and the user
-        // knows something went wrong. The next successful command will process the old one.
+        // knows something went wrong. The next successful command will process the old one
     }
 }
 

@@ -93,14 +93,14 @@ void _PostLoadMessage(ScriptState* state) {
 
 
 void Binding_GetCommand(void* L) {
-	LunarTear::Get().Game().LuaBindingDispatcher(L, _GetCommand);
+	LunarTear::Get().Game().PhaseBindingDispatcher(L, _GetCommand);
 }
 void Binding_SetCommandResult(void* L) {
-	LunarTear::Get().Game().LuaBindingDispatcher(L, _SetCommandResult);
+	LunarTear::Get().Game().PhaseBindingDispatcher(L, _SetCommandResult);
 }
 void Binding_PostStartMessage(void* L) {
-	LunarTear::Get().Game().LuaBindingDispatcher(L, _PostStartMessage);
+	LunarTear::Get().Game().PhaseBindingDispatcher(L, _PostStartMessage);
 }
 void Binding_PostLoadMessage(void* L) {
-	LunarTear::Get().Game().LuaBindingDispatcher(L, _PostLoadMessage);
+	LunarTear::Get().Game().PhaseBindingDispatcher(L, _PostLoadMessage);
 }

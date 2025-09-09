@@ -18,6 +18,9 @@ public:
 private slots:
     void onInvincibleClicked(bool checked);
     void onInfiniteJumpToggled(bool checked);
+    void onFlyToggled(bool checked);
+    void onFlyUpdate();
+
 
     void onMaxHpMpClicked();
     void onMaxStatsClicked();
@@ -47,6 +50,10 @@ private:
     QPushButton* m_invincibleButton;
     QPushButton* m_infiniteJumpButton;
 
+    QLabel* m_flyLabel;
+    QPushButton* m_flyButton;
+
+    QSlider* m_flySensSlider;
     QPushButton* m_maxHpMpButton;
     QPushButton* m_maxStatsButton;
 
@@ -72,7 +79,10 @@ private:
     QPushButton* m_teleportCoordsButton;
 
     QTimer* m_stateUpdateTimer;
+    QTimer* m_flyUpdateTimer;
+
     bool m_isInfiniteJumpPatched = false;
+    bool m_isFlyPatched = false;
 };
 
 

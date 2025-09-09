@@ -14,6 +14,9 @@ public:
     QVector3D getPlayerPosition();
     float getPlayerRotationY();
 
+    float getCameraYaw();
+    float getCameraPitch();
+
     void teleportToPoint(const QString& mapName, const QVector3D& pos, float rotY);
     void setPlayerPosition(const QVector3D& pos, float rotY);
 
@@ -29,6 +32,8 @@ public:
     void setPlayerCharacter(int id);
 
 private:
+
+
     GameData() = default;
     ~GameData() = default;
     GameData(const GameData&) = delete;

@@ -1,6 +1,6 @@
 #include "Toolbox.h"
 #include "GameData.h"
-#include "Patch.h" // Include for infinite jump
+#include "Patch.h" 
 
 #include <QPushButton>
 #include <QComboBox>
@@ -18,6 +18,8 @@
 #include <vector>
 #include <Callbacks.h>
 #include "MapView.h"
+#include <Windows.h> 
+#include <cmath>
 
 namespace {
     // Predefined speed levels for a non-linear slider
@@ -26,6 +28,18 @@ namespace {
         1.0f, // Default
         1.25f, 1.5f, 2.0f, 3.0f, 5.0f, 10.0f, 20.0f, 50.0f
     };
+
+    struct CameraMatrix {
+        float m[4][4];
+    };
+
+    const CameraMatrix* getCameraMatrix() {
+        uintptr_t baseAddr = LunarTear::Get().Game().GetProcessBaseAddress();
+        if (!baseAddr) return nullptr;
+        uintptr_t camManagerAddr = baseAddr + 0x32e7a00;
+        if (!camManagerAddr) return nullptr;
+        return (const CameraMatrix*)(camManagerAddr + 0x240);
+    }
 }
 
 Toolbox::Toolbox(QWidget* parent)
@@ -38,6 +52,9 @@ Toolbox::Toolbox(QWidget* parent)
     m_stateUpdateTimer = new QTimer(this);
     connect(m_stateUpdateTimer, &QTimer::timeout, this, &Toolbox::updateButtonStates);
     m_stateUpdateTimer->start(300); 
+
+    m_flyUpdateTimer = new QTimer(this);
+    connect(m_flyUpdateTimer, &QTimer::timeout, this, &Toolbox::onFlyUpdate);
 }
 
 void Toolbox::setupUi()
@@ -49,10 +66,28 @@ void Toolbox::setupUi()
     auto playerTogglesLayout = new QHBoxLayout(playerTogglesGroup);
     m_invincibleButton = new QPushButton("Invincibility");
     m_infiniteJumpButton = new QPushButton("Infinite Jump");
+
+    auto flyGroup = new QGroupBox();
+    auto flyLayout = new QVBoxLayout(flyGroup);
+    m_flyLabel = new QLabel("Speed");
+    m_flyButton = new QPushButton("Noclip");
+    m_flySensSlider = new QSlider(Qt::Horizontal);
+    m_flySensSlider->setRange(1, 100);
+    m_flySensSlider->setValue(20);
+
+    flyLayout->addWidget(m_flyButton);
+    flyLayout->addWidget(m_flyLabel);
+    flyLayout->addWidget(m_flySensSlider);
+
+
     m_infiniteJumpButton->setCheckable(true); 
     m_invincibleButton->setCheckable(true);
+    m_flyButton->setCheckable(true);
+
     playerTogglesLayout->addWidget(m_invincibleButton);
     playerTogglesLayout->addWidget(m_infiniteJumpButton);
+    playerTogglesLayout->addWidget(flyGroup);
+
     mainLayout->addWidget(playerTogglesGroup);
 
     auto statCheatsGroup = new QGroupBox();
@@ -179,6 +214,8 @@ void Toolbox::setupConnections()
 {
     connect(m_invincibleButton, &QPushButton::toggled, this, &Toolbox::onInvincibleClicked);
     connect(m_infiniteJumpButton, &QPushButton::toggled, this, &Toolbox::onInfiniteJumpToggled);
+    connect(m_flyButton, &QPushButton::toggled, this, &Toolbox::onFlyToggled);
+
     connect(m_maxHpMpButton, &QPushButton::clicked, this, &Toolbox::onMaxHpMpClicked);
     connect(m_maxStatsButton, &QPushButton::clicked, this, &Toolbox::onMaxStatsClicked);
 
@@ -210,6 +247,61 @@ void Toolbox::onInfiniteJumpToggled(bool checked)
     }
     m_isInfiniteJumpPatched = checked;
 }
+
+void Toolbox::onFlyToggled(bool checked)
+{
+    if (checked) {
+        PatchNoMove();
+        m_flyUpdateTimer->start(16);
+    }
+    else {
+        UnpatchNoMove();
+        m_flyUpdateTimer->stop();
+    }
+    m_isFlyPatched = checked;
+
+}
+
+void Toolbox::onFlyUpdate()
+{
+    if (!m_isFlyPatched || !GameData::instance().isGameActive()) {
+        return;
+    }
+
+    ActorPlayable* player = LunarTear::Get().Game().GetActorPlayable();
+    const CameraMatrix* cameraMatrix = getCameraMatrix();
+
+    if (!player || !cameraMatrix) {
+        return;
+    }
+
+    float sensitivity = m_flySensSlider->value() / 20.0f;
+
+    QVector3D forward(cameraMatrix->m[0][2], cameraMatrix->m[1][2], cameraMatrix->m[2][2]);
+
+    QVector3D right(cameraMatrix->m[0][0], cameraMatrix->m[1][0], cameraMatrix->m[2][0]);
+
+    QVector3D worldUp(0.0f, 1.0f, 0.0f);
+
+    QVector3D totalMove(0.0f, 0.0f, 0.0f);
+
+    if (GetAsyncKeyState('W') & 0x8000) totalMove += forward;
+    if (GetAsyncKeyState('S') & 0x8000) totalMove -= forward;
+    if (GetAsyncKeyState('A') & 0x8000) totalMove += right;
+    if (GetAsyncKeyState('D') & 0x8000) totalMove -= right;
+    if (GetAsyncKeyState(VK_SPACE) & 0x8000) totalMove += worldUp;
+    if (GetAsyncKeyState(VK_SHIFT) & 0x8000) totalMove -= worldUp;
+
+    if (totalMove.isNull()) return;
+
+    totalMove.normalize();
+    totalMove *= sensitivity;
+
+    player->posX += totalMove.x();
+    player->posY += totalMove.y();
+    player->posZ += totalMove.z();
+}
+
 
 void Toolbox::onMaxHpMpClicked() { GameData::instance().setMaxHpMp(); }
 void Toolbox::onMaxStatsClicked() { GameData::instance().setMaxStats(); }
@@ -260,7 +352,9 @@ void Toolbox::onChangeLevelClicked()
 }
 
 
-void Toolbox::onSpawnKaineClicked() { LunarTear::Get().QueuePhaseScriptExecution("_ActivateUniqueActor(-2); _EndUniqueActorScriptMode(-2);"); }
+void Toolbox::onSpawnKaineClicked() {
+    LunarTear::Get().QueuePhaseScriptExecution("_ActivateUniqueActor(-2); _EndUniqueActorScriptMode(-2);"); 
+}
 void Toolbox::onSpawnEmilClicked() { LunarTear::Get().QueuePhaseScriptExecution("_ActivateUniqueActor(-3); _EndUniqueActorScriptMode(-3);"); }
 
 void Toolbox::onGetCoordsClicked()
@@ -299,5 +393,6 @@ void Toolbox::updateButtonStates()
 
     if (isActive) {
         m_infiniteJumpButton->setChecked(m_isInfiniteJumpPatched);
+        m_flyButton->setChecked(m_isFlyPatched);
     }
 }

@@ -86,7 +86,7 @@ public:
         }
     }
 
-    int LuaBindingDispatcher(void* luaState, void* CFunc) { return m_gameApi->luaBindingDispatcher(luaState, CFunc); }
+    int PhaseBindingDispatcher(void* luaState, void* CFunc) { return m_gameApi->phaseBindingDispatcher(luaState, CFunc); }
     void* GetArgumentPointer(void* argBuffer, int index) { return m_gameApi->GetArgumentPointer(argBuffer, index); }
     const char* GetArgumentString(void* arg) { return m_gameApi->GetArgumentString(arg); }
     int GetArgumentInt(void* arg) { return m_gameApi->GetArgumentInt(arg); }
@@ -228,7 +228,7 @@ public:
         if (!func) return;
         // The wrapper will be responsible for calling it and then deleting it
         auto* p_func = new std::function<void()>(std::move(func));
-        m_api->QueuePhaseUpdateCallback(m_handle, &LambdaWrapper, p_func);
+        m_api->QueuePhaseUpdateTask(m_handle, &LambdaWrapper, p_func);
     }
 
 
