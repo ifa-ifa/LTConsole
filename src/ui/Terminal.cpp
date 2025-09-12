@@ -68,7 +68,7 @@ Terminal::Terminal(QWidget* parent)
         "    border: 1px solid #2c313a;"
         "    font-family: 'Consolas', 'Courier New', monospace;"
         "    font-size: 14px;"
-        "    padding: 8px;"
+        "    padding: 6px;"
         "}"
         "QPlainTextEdit:focus {"
         "    border: 1px solid #61afef;"

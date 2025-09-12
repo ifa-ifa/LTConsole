@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include "Toolbox.h" 
 #include "util/AtlasImporter.h"
+#include "EntityViewer.h"
 #include "LunarTear++.h"
 #include <iostream>
 
@@ -37,4 +38,7 @@ MainWindow::MainWindow() {
 
     Toolbox* toolbox = new Toolbox();
     toolbox->show();
+
+    EntityViewer* entityman = new EntityViewer();
+    entityman->show();
 }

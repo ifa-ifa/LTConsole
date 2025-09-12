@@ -17,7 +17,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(LTCONSOLE_SOURCES
 	"src/LTConsole.cpp"
 	"src/ui/MainWindow.cpp"
- "src/ui/Terminal.cpp" "src/ui/Terminal.h"  "src/Bindings.cpp" "src/LuaConsoleManager.h" "src/LuaConsoleManager.cpp"   "src/ui/Atlas.cpp" "src/ui/MapView.h" "src/ui/MapView.cpp" "src/ui/Atlas.h" "src/util/AtlasImporter.h" "src/util/AtlasImporter.cpp" "src/GameData.h" "src/GameData.cpp" "src/Callbacks.h" "src/Callbacks.cpp"  "src/ui/Toolbox.h" "src/ui/Toolbox.cpp" "src/Patch.cpp" "src/Patch.h")
+ "src/ui/Terminal.cpp" "src/ui/Terminal.h"  "src/Bindings.cpp" "src/LuaConsoleManager.h" "src/LuaConsoleManager.cpp"   "src/ui/Atlas.cpp" "src/ui/MapView.h" "src/ui/MapView.cpp" "src/ui/Atlas.h" "src/util/AtlasImporter.h" "src/util/AtlasImporter.cpp" "src/GameData.h" "src/GameData.cpp" "src/Callbacks.h" "src/Callbacks.cpp"  "src/ui/Toolbox.h" "src/ui/Toolbox.cpp" "src/Patch.cpp" "src/Patch.h" "src/ui/EntityViewer.h" "src/ui/EntityViewer.cpp")
 
 
 add_library(LTConsole SHARED ${LTCONSOLE_SOURCES})

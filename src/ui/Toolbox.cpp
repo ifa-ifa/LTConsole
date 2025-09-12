@@ -24,9 +24,9 @@
 namespace {
     // Predefined speed levels for a non-linear slider
     const std::vector<float> speedLevels = {
-        0.1f, 0.25f, 0.5f, 0.75f,
+        0.0f, 0.01f, 0.1f, 0.25f, 0.5f, 0.75f,
         1.0f, // Default
-        1.25f, 1.5f, 2.0f, 3.0f, 5.0f, 10.0f, 20.0f, 50.0f
+        1.25f, 1.5f, 2.0f, 3.0f, 5.0f, 7.5f, 10.0f, 15.0f, 20.0f, 50.0f, 100.0f, 300.0f, 500.0f
     };
 
     struct CameraMatrix {
@@ -102,11 +102,11 @@ void Toolbox::setupUi()
     auto worldLayout = new QGridLayout(worldGroup);
     m_gameSpeedSlider = new QSlider(Qt::Horizontal);
     m_gameSpeedSlider->setRange(0, speedLevels.size() - 1);
-    m_gameSpeedSlider->setValue(4); // Default to 1.0f
+    m_gameSpeedSlider->setValue(6); // Default to 1.0f
     m_gameSpeedLabel = new QLabel("Game Speed: 1.0x");
     m_playerSpeedSlider = new QSlider(Qt::Horizontal);
     m_playerSpeedSlider->setRange(0, speedLevels.size() - 1);
-    m_playerSpeedSlider->setValue(4); // Default to 1.0f
+    m_playerSpeedSlider->setValue(6); // Default to 1.0f
     m_playerSpeedLabel = new QLabel("Player Speed: 1.0x");
     m_restartPhaseButton = new QPushButton("Restart Phase");
     m_restartRestorePosButton = new QPushButton("Restart + Restore Pos");
