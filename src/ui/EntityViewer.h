@@ -5,7 +5,6 @@
 #include <QTimer>
 
 class QTableWidget;
-class QPushButton;
 
 struct EntityInfo {
     uintptr_t pActor;
@@ -27,8 +26,8 @@ private slots:
     void refreshEntityList();
     void onTeleportToPlayerClicked();
     void onTeleportPlayerToEntityClicked();
-    void onTableSelectionChanged();
-    void updateButtonStates();
+    void updateWidgetState();
+    void onContextMenuRequested(const QPoint& pos);
 
 private:
     void setupUi();
@@ -36,9 +35,6 @@ private:
     void setupConnections();
 
     QTableWidget* m_entityTable;
-
-    QPushButton* m_teleportToPlayerButton;
-    QPushButton* m_teleportPlayerToEntityButton;
 
     QTimer* m_autoRefreshTimer;
     QTimer* m_stateUpdateTimer;

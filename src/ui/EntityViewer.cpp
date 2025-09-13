@@ -3,38 +3,37 @@
 #include <LunarTear++.h>
 
 #include <QTableWidget>
-#include <QPushButton>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QScrollBar>
 #include <QMessageBox>
 #include <QVector3D>
+#include <QMenu>
 
 
 #pragma pack(push, 1)
 struct CParamSet {
-    void** vtable;            
-    char padding1[3 * 8];          
+    void** vtable;
+    char padding1[3 * 8];
     int cparamsetforvehcile_id;
-    char padding2[89 * 8];           
+    char padding2[89 * 8];
     int health;
     char padding3[6 * 8];
-    float x_pos;              
+    float x_pos;
     float y_pos;
     float z_pos;
 };
 
 struct cActor {
-    void* vtable;                     
+    void* vtable;
     cActor* prev_actor_primary;
     cActor* next_actor_primary;
     cActor* prev_actor_secondary;
     cActor* next_actor_secondary;
-    char padding1[0x1B0];            
-    int actor_id;                    
-    char padding2[0x14174];          
-    CParamSet* cparams;              
+    char padding1[0x1B0];
+    int actor_id;
+    char padding2[0x14174];
+    CParamSet* cparams;
 };
 
 struct ActorListController {
@@ -92,14 +91,14 @@ EntityViewer::EntityViewer(QWidget* parent)
     setupUi();
     applyStyling();
     setupConnections();
-    updateButtonStates();
+    updateWidgetState();
 
     m_autoRefreshTimer = new QTimer(this);
     connect(m_autoRefreshTimer, &QTimer::timeout, this, &EntityViewer::refreshEntityList);
-    m_autoRefreshTimer->start(500); 
+    m_autoRefreshTimer->start(500);
 
     m_stateUpdateTimer = new QTimer(this);
-    connect(m_stateUpdateTimer, &QTimer::timeout, this, &EntityViewer::updateButtonStates);
+    connect(m_stateUpdateTimer, &QTimer::timeout, this, &EntityViewer::updateWidgetState);
     m_stateUpdateTimer->start(300);
 }
 
@@ -114,21 +113,13 @@ void EntityViewer::setupUi()
     m_entityTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_entityTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_entityTable->verticalHeader()->setVisible(false);
+    m_entityTable->setContextMenuPolicy(Qt::CustomContextMenu);
 
     QHeaderView* header = m_entityTable->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::Interactive);
     header->setStretchLastSection(true);
 
-    auto buttonLayout = new QHBoxLayout();
-    m_teleportToPlayerButton = new QPushButton("Teleport to Me");
-    m_teleportPlayerToEntityButton = new QPushButton("Teleport Me to It");
-
-    buttonLayout->addStretch(1);
-    buttonLayout->addWidget(m_teleportToPlayerButton);
-    buttonLayout->addWidget(m_teleportPlayerToEntityButton);
-
     mainLayout->addWidget(m_entityTable);
-    mainLayout->addLayout(buttonLayout);
 }
 
 void EntityViewer::applyStyling()
@@ -138,26 +129,22 @@ void EntityViewer::applyStyling()
     const QString borderColor = "#2c313a";
     const QString highlightColor = "#61afef";
     const QString secondaryBgColor = "#21252b";
-    const QString disabledColor = "#5c6370";
 
     QString styleSheet = QString(R"(
         QWidget { background-color: %1; color: %2; font-family: 'Consolas', 'Courier New', monospace;  }
         QTableWidget { background-color: %5; border: 1px solid %3; gridline-color: %3; }
         QTableWidget::item:selected { background-color: %4; color: %5; }
         QHeaderView::section { background-color: %1; border: 1px solid %3; padding: 4px; }
-        QPushButton { background-color: #3a3f4b; border: 1px solid %3; border-radius: 4px; padding: 5px 12px; }
-        QPushButton:hover { background-color: #4b5162; }
-        QPushButton:disabled { background-color: %3; color: %6; }
+        QMenu { background-color: #3a3f4b; border: 1px solid %3; }
+        QMenu::item:selected { background-color: %4; }
         
-    )").arg(bgColor, textColor, borderColor, highlightColor, secondaryBgColor, disabledColor);
+    )").arg(bgColor, textColor, borderColor, highlightColor, secondaryBgColor);
     this->setStyleSheet(styleSheet);
 }
 
 void EntityViewer::setupConnections()
 {
-    connect(m_teleportToPlayerButton, &QPushButton::clicked, this, &EntityViewer::onTeleportToPlayerClicked);
-    connect(m_teleportPlayerToEntityButton, &QPushButton::clicked, this, &EntityViewer::onTeleportPlayerToEntityClicked);
-    connect(m_entityTable, &QTableWidget::itemSelectionChanged, this, &EntityViewer::onTableSelectionChanged);
+    connect(m_entityTable, &QTableWidget::customContextMenuRequested, this, &EntityViewer::onContextMenuRequested);
 }
 
 void EntityViewer::refreshEntityList()
@@ -181,35 +168,35 @@ void EntityViewer::refreshEntityList()
 
     m_entities.clear();
 
-        uintptr_t baseAddr = LunarTear::Get().Game().GetProcessBaseAddress();
-        auto* pManager = reinterpret_cast<ActorListControllerPair*>(baseAddr + MANAGER_ADDRESS_OFFSET);
-        ActorListController* list = &pManager->secondary_list;
+    uintptr_t baseAddr = LunarTear::Get().Game().GetProcessBaseAddress();
+    auto* pManager = reinterpret_cast<ActorListControllerPair*>(baseAddr + MANAGER_ADDRESS_OFFSET);
+    ActorListController* list = &pManager->secondary_list;
 
-        cActor* currentActor = list->head;
-        if (currentActor) {
-            QVector3D playerPos = GameData::instance().getPlayerPosition();
-            do {
-                EntityInfo info;
-                info.pActor = reinterpret_cast<uintptr_t>(currentActor);
-                info.actorId = currentActor->actor_id;
-                info.rtti = getRttiName(currentActor->vtable);
+    cActor* currentActor = list->head;
+    if (currentActor) {
+        QVector3D playerPos = GameData::instance().getPlayerPosition();
+        do {
+            EntityInfo info;
+            info.pActor = reinterpret_cast<uintptr_t>(currentActor);
+            info.actorId = currentActor->actor_id;
+            info.rtti = getRttiName(currentActor->vtable);
 
-                if (currentActor->cparams) {
-                    info.hp = currentActor->cparams->health;
-                    info.x = currentActor->cparams->x_pos;
-                    info.y = currentActor->cparams->y_pos;
-                    info.z = currentActor->cparams->z_pos;
-                }
-                else {
-                    info.hp = -1;
-                    info.x = info.y = info.z = 0.0f;
-                }
-                m_entities.push_back(info);
+            if (currentActor->cparams) {
+                info.hp = currentActor->cparams->health;
+                info.x = currentActor->cparams->x_pos;
+                info.y = currentActor->cparams->y_pos;
+                info.z = currentActor->cparams->z_pos;
+            }
+            else {
+                info.hp = -1;
+                info.x = info.y = info.z = 0.0f;
+            }
+            m_entities.push_back(info);
 
-                currentActor = currentActor->next_actor_secondary;
-            } while (currentActor && currentActor != list->head);
-        }
-    
+            currentActor = currentActor->next_actor_secondary;
+        } while (currentActor && currentActor != list->head);
+    }
+
 
 
     m_entityTable->setRowCount(m_entities.size());
@@ -278,18 +265,25 @@ void EntityViewer::onTeleportPlayerToEntityClicked()
     GameData::instance().setPlayerPosition(entityPos, currentRot);
 }
 
-void EntityViewer::onTableSelectionChanged()
+void EntityViewer::onContextMenuRequested(const QPoint& pos)
 {
-    updateButtonStates();
+    QTableWidgetItem* item = m_entityTable->itemAt(pos);
+    if (!item) {
+        return;
+    }
+
+    QMenu contextMenu;
+    QAction* teleportToPlayerAction = contextMenu.addAction("Teleport to Me");
+    QAction* teleportPlayerToEntityAction = contextMenu.addAction("Teleport Me to It");
+
+    connect(teleportToPlayerAction, &QAction::triggered, this, &EntityViewer::onTeleportToPlayerClicked);
+    connect(teleportPlayerToEntityAction, &QAction::triggered, this, &EntityViewer::onTeleportPlayerToEntityClicked);
+
+    contextMenu.exec(m_entityTable->viewport()->mapToGlobal(pos));
 }
 
-void EntityViewer::updateButtonStates()
+void EntityViewer::updateWidgetState()
 {
     bool isGameActive = GameData::instance().isGameActive();
     this->setEnabled(isGameActive);
-
-    bool isEntitySelected = !m_entityTable->selectedItems().isEmpty();
-
-    m_teleportToPlayerButton->setEnabled(isGameActive && isEntitySelected);
-    m_teleportPlayerToEntityButton->setEnabled(isGameActive && isEntitySelected);
 }

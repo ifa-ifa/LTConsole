@@ -166,7 +166,7 @@ void Atlas::applyStyling()
         QWidget { background-color: %1; color: %2; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; }
         QListWidget, QTableWidget, QLineEdit { background-color: %5; border: 1px solid %3; border-radius: 4px; padding: 4px; }
         QListWidget::item:selected, QTableWidget::item:selected { background-color: %4; color: %5; }
-        QPushButton { background-color: #3a3f4b; border: 1px solid %3; border-radius: 4px; padding: 5px 12px; }
+        QPushButton { background-color: #3a3f4b; border: 1px solid %3; border-radius: 4px; padding: 3px 10px; font-size: 12px; }
         QPushButton:hover { background-color: #4b5162; }
         QPushButton:pressed { background-color: #404552; }
         QPushButton:disabled { background-color: %3; color: %6; }

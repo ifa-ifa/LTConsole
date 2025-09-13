@@ -63,40 +63,28 @@ void Toolbox::setupUi()
     mainLayout->setAlignment(Qt::AlignTop);
 
     auto playerTogglesGroup = new QGroupBox();
-    auto playerTogglesLayout = new QHBoxLayout(playerTogglesGroup);
+    auto playerTogglesLayout = new QGridLayout(playerTogglesGroup);
     m_invincibleButton = new QPushButton("Invincibility");
     m_infiniteJumpButton = new QPushButton("Infinite Jump");
 
-    auto flyGroup = new QGroupBox();
-    auto flyLayout = new QVBoxLayout(flyGroup);
-    m_flyLabel = new QLabel("Speed");
+
+    m_flyLabel = new QLabel("Noclip Speed");
     m_flyButton = new QPushButton("Noclip");
     m_flySensSlider = new QSlider(Qt::Horizontal);
     m_flySensSlider->setRange(1, 100);
     m_flySensSlider->setValue(20);
 
-    flyLayout->addWidget(m_flyButton);
-    flyLayout->addWidget(m_flyLabel);
-    flyLayout->addWidget(m_flySensSlider);
-
-
     m_infiniteJumpButton->setCheckable(true); 
     m_invincibleButton->setCheckable(true);
     m_flyButton->setCheckable(true);
 
-    playerTogglesLayout->addWidget(m_invincibleButton);
-    playerTogglesLayout->addWidget(m_infiniteJumpButton);
-    playerTogglesLayout->addWidget(flyGroup);
+    playerTogglesLayout->addWidget(m_flyButton, 0, 2);
+    playerTogglesLayout->addWidget(m_flyLabel, 1, 0);
+    playerTogglesLayout->addWidget(m_flySensSlider, 1, 1, 1, 2);
+    playerTogglesLayout->addWidget(m_invincibleButton, 0, 1);
+    playerTogglesLayout->addWidget(m_infiniteJumpButton, 0, 0);
 
     mainLayout->addWidget(playerTogglesGroup);
-
-    auto statCheatsGroup = new QGroupBox();
-    auto statCheatsLayout = new QHBoxLayout(statCheatsGroup);
-    m_maxHpMpButton = new QPushButton("Max HP & MP");
-    m_maxStatsButton = new QPushButton("Max Stats");
-    statCheatsLayout->addWidget(m_maxHpMpButton);
-    statCheatsLayout->addWidget(m_maxStatsButton);
-    mainLayout->addWidget(statCheatsGroup);
 
     auto worldGroup = new QGroupBox();
     auto worldLayout = new QGridLayout(worldGroup);
@@ -122,10 +110,15 @@ void Toolbox::setupUi()
     auto progressionLayout = new QHBoxLayout(progressionGroup);
     m_maxMoneyButton = new QPushButton("Max Money");
     m_maxItemsButton = new QPushButton("Max Items");
-    m_changeLevelButton = new QPushButton("Set Level...");
+    m_maxHpMpButton = new QPushButton("Max HP & MP");
+    m_maxStatsButton = new QPushButton("Max Stats");
+    m_changeLevelButton = new QPushButton("Set Level");
     progressionLayout->addWidget(m_maxMoneyButton);
     progressionLayout->addWidget(m_maxItemsButton);
+    progressionLayout->addWidget(m_maxHpMpButton);
+    progressionLayout->addWidget(m_maxStatsButton);
     progressionLayout->addWidget(m_changeLevelButton);
+
     mainLayout->addWidget(progressionGroup);
 
     auto characterGroup = new QGroupBox();
@@ -197,7 +190,7 @@ void Toolbox::applyStyling()
         QLineEdit, QComboBox, QSpinBox { background-color: %5; border: 1px solid %3; border-radius: 4px; padding: 4px; }
         QComboBox::drop-down { border: none; }
         QComboBox QAbstractItemView { background-color: %5; border: 1px solid %3; selection-background-color: %4; }
-        QPushButton { background-color: #3a3f4b; border: 1px solid %3; border-radius: 4px; padding: 5px 12px; }
+        QPushButton { background-color: #3a3f4b; border: 1px solid %3; border-radius: 4px; padding: 3px 8px; }
         QPushButton:hover { background-color: #4b5162; }
         QPushButton:pressed { background-color: #404552; }
         QPushButton:disabled { background-color: %3; color: %6; }
