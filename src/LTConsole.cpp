@@ -2,8 +2,11 @@
 #include <LunarTear++.h>
 #include <QApplication>
 #include <thread>
+#include <QLibrary>
 #include "Bindings.h"
 #include "ui/MainWindow.h"
+
+
 
 const LunarTearAPI* g_api;
 LT_PluginHandle g_handle;
@@ -12,19 +15,32 @@ QString g_modBasePath;
 std::thread g_uiThread;
 std::unique_ptr<QApplication> g_app;
 
+
 std::atomic<bool> g_running = false;
 
 void StartUI(bool runInThread)
 {
     auto guiFunc = [] {
+
+
+        QString modBasePath = QString::fromStdString(LunarTear::Get().GetModDirectory("LTCon"));
+        QString pluginBinPath = modBasePath + "/bin";
+
+        QCoreApplication::addLibraryPath(pluginBinPath);
+
         g_running = true;
         int argc = 0;
         g_app = std::make_unique<QApplication>(argc, nullptr);
 
+        QCoreApplication::setOrganizationName("ifaifa");
+        QCoreApplication::setApplicationName("LTConsole");
+
         MainWindow window;
-        //window.show();
+        window.show();
 
         g_app->exec();      
+
+
         g_app.reset();
         g_running = false;
         };
@@ -44,6 +60,10 @@ void LunarTearPluginInit(const LunarTearAPI* api, LT_PluginHandle handle)
     g_handle = handle;
 
     LunarTear::Init(api, handle);
+
+    LunarTear::Get().Log(LT_LOG_VERBOSE) << "LTConsole setup start";
+
+
     if (LunarTear::Get().GetRawAPI()->api_version < LUNAR_TEAR_API_VERSION) {
 
         std::string msg =
@@ -54,6 +74,7 @@ void LunarTearPluginInit(const LunarTearAPI* api, LT_PluginHandle handle)
 
         return;
     }
+
 
     LT_LuaCFunc fLoadString = (LT_LuaCFunc)(LunarTear::Get().Game().GetProcessBaseAddress() + 0x3d92b0); // luaB_loadstring
     LunarTear::Get().RegisterLuaCFunc("_ifaifa_LTCon_loadstring", fLoadString);
@@ -74,6 +95,7 @@ void LunarTearPluginInit(const LunarTearAPI* api, LT_PluginHandle handle)
     LunarTear::Get().RegisterLuaCFunc("_ifaifa_LTCon_PostStartMessage", Binding_PostStartMessage);
     LunarTear::Get().RegisterLuaCFunc("_ifaifa_LTCon_PostLoadMessage", Binding_PostLoadMessage);
 
+    LunarTear::Get().Log(LT_LOG_VERBOSE) << "LTConsole setup complete";
 
 
     StartUI(true);
@@ -85,6 +107,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         DisableThreadLibraryCalls(hModule);
     }
 
+
+    // None of this stuff is theoretically safe to do in DLLMain but Lunar Tear doesnt provide a shutdown api yet and it seems to work in practice
     else if (ul_reason_for_call == DLL_PROCESS_DETACH) {
         if (g_running) { 
             // thread-safe way to ask the QApplication to quit

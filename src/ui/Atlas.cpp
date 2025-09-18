@@ -163,6 +163,7 @@ void Atlas::applyStyling()
     const QString handleColor = "#5c6370";
 
     QString styleSheet = QString(R"(
+
         QWidget { background-color: %1; color: %2; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; }
         QListWidget, QTableWidget, QLineEdit { background-color: %5; border: 1px solid %3; border-radius: 4px; padding: 4px; }
         QListWidget::item:selected, QTableWidget::item:selected { background-color: %4; color: %5; }

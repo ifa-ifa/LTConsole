@@ -1,6 +1,10 @@
 #pragma once
 #include <QMainWindow>
-
+#include <QDockWidget>
+#include <QCloseEvent>
+#include <QMenuBar>
+#include <QTimer>
+#include <QMenu>
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
@@ -9,7 +13,19 @@ class MainWindow : public QMainWindow {
 public:
 
 	MainWindow();
+private slots:
+	void saveUiState();
+private:
 
+	void closeEvent(QCloseEvent* e);
 
+	QDockWidget* terminalDock;
+	QDockWidget* toolboxDock;
+	QDockWidget* atlasDock;
+	QDockWidget* entityViewerDock;
+	QDockWidget* infoWidgetDock;
+	QDockWidget* inspectorDock;
+
+	QTimer* m_saveStateTimer;
 
 };

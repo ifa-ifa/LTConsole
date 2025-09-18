@@ -15,7 +15,7 @@
 
 // function to manually and reliably translate a QKeyEvent to a QChar
 // using the WinAPI. This is necessary becuase the game
-// interferes with the standard message processing
+// interferes with the keyboard input
 QChar getCharFromKeyEvent(QKeyEvent* e)
 {
     BYTE keyboardState[256];
@@ -27,7 +27,7 @@ QChar getCharFromKeyEvent(QKeyEvent* e)
         keyboardState[VK_SHIFT] |= 0x80;
     }
     else {
-        keyboardState[VK_SHIFT] &= ~0x80;
+        keyboardState[VK_SHIFT]  &= ~0x80;
     }
     if (e->modifiers() & Qt::ControlModifier) {
         keyboardState[VK_CONTROL] |= 0x80;
@@ -39,16 +39,14 @@ QChar getCharFromKeyEvent(QKeyEvent* e)
         keyboardState[VK_MENU] |= 0x80;
     }
     else {
+
         keyboardState[VK_MENU] &= ~0x80;
     }
 
-    wchar_t buffer[2] = { 0 };
-    int virtualKey = e->nativeVirtualKey();
-    int scanCode = e->nativeScanCode();
+    wchar_t buffer[2] = { 0,0 };
+    int res = ToUnicode(e->nativeVirtualKey(), e->nativeScanCode(), keyboardState, buffer, 2, 0);
 
-    int result = ToUnicode(virtualKey, scanCode, keyboardState, buffer, 2, 0);
-
-    if (result > 0) {
+    if (res > 0) {
         return QChar(buffer[0]);
     }
 

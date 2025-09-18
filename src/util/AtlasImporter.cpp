@@ -9,6 +9,14 @@
 #include <QJsonArray>
 #include <QDebug>
 
+
+//QString modBasePath = QString::fromStdString(LunarTear::Get().GetModDirectory("LTCon"));
+//QString inputPath = modBasePath + "/resource/tables";
+//QString outputPath = modBasePath + "/resource/atlas";
+//AtlasImporter importer;
+//importer.run(inputPath, outputPath);
+
+
 bool AtlasImporter::run(const QString& inputDir, const QString& outputDir)
 {
     qInfo() << "Starting Atlas data import...";
