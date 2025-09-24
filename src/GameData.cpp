@@ -162,10 +162,10 @@ void GameData::setMaxStats()
 {
     CPlayerParam* params = LunarTear::Get().Game().GetPlayerParam();
     if (params) {
-        params->attack_stat = 1000000000;
-        params->magickAttack_stat = 1000000000;
-        params->defense_stat = 1000000000;
-        params->magickDefense_stat = 1000000000;
+        params->attack_stat = 100000000;
+        params->magickAttack_stat = 100000000;
+        params->defense_stat = 100000000;
+        params->magickDefense_stat = 100000000;
     }
 }
 
