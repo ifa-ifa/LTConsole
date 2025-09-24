@@ -22,6 +22,8 @@ SOFTWARE.
 
 
 
+
+
 This project uses QT6 under LGPLv3. A copy of the LGPLv3 text follows:
 
 
