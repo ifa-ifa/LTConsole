@@ -75,7 +75,7 @@ InfoWidget::InfoWidget()
     const QString textColor = "#abb2bf";
 
     QString styleSheet = QString(R"(
-        QWidget { background-color: %1; color: %2; font-family: 'Consolas', 'Courier New', monospace; font-size: 14px; }
+        QWidget { background-color: %1; color: %2; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; }
 
     )").arg(bgColor, textColor);
     this->setStyleSheet(styleSheet);
@@ -87,12 +87,12 @@ InfoWidget::InfoWidget()
     QLabel* artlabel = new QLabel(htmlText, this);
     artlabel->setStyleSheet("QWidget { font-size: 4px; }");
 
-    QLabel* infoLabel = new QLabel(" LTConsole\n v1.0.1\n ifaifa");
+    QLabel* infoLabel = new QLabel(" LTConsole\n v1.0.2\n ifaifa\n");
     
-    QLabel* patchLabel = new QLabel(" Update Notes:\n - Added Inspector\n - Added dock layout saving\n - Fixed crash while using noclip");
+    QLabel* patchLabel = new QLabel(" Update Notes:\n\n v1.0.1\n - Added Inspector\n - Added dock layout saving\n - Fixed crash while using noclip\n v1.0.2\n - Fixed stutter cuased by max stats");
 
 
-    QLabel* cheerLabel = new QLabel(" You're doing great !!!! ");
+    QLabel* cheerLabel = new QLabel(" (You're doing great !!!!) ");
     
 
 
