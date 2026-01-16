@@ -38,6 +38,17 @@ bool GameData::isGameActive()
     }
 }
 
+std::span<replicant::raw::RawWeaponBody*> GameData::getWeaponSpecs() {
+	auto weaponSpecBase = reinterpret_cast<replicant::raw::RawWeaponBody**>(LunarTear::Get().Game().GetProcessBaseAddress() + 0x47c2670);
+
+    return std::span<replicant::raw::RawWeaponBody*>(
+        weaponSpecBase,
+        64
+	);
+
+}
+
+
 
 QString GameData::getCurrentPhase()
 {

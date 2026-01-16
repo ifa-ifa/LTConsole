@@ -2,6 +2,8 @@
 #include <QVector3D>
 #include <QString>
 #include "LunarTear.h"
+#include <replicant/weapon.h>
+#include <span>
 
 
 class GameData
@@ -17,6 +19,8 @@ public:
     float getCameraYaw();
     float getCameraPitch();
 
+    std::span<replicant::raw::RawWeaponBody*> getWeaponSpecs();
+
     void teleportToPoint(const QString& mapName, const QVector3D& pos, float rotY);
     void setPlayerPosition(const QVector3D& pos, float rotY);
 
@@ -30,6 +34,8 @@ public:
     void setMaxItems();
     void setPlayerLevel(int level);
     void setPlayerCharacter(int id);
+
+    
 
 private:
 

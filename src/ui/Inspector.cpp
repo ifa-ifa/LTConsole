@@ -3,11 +3,132 @@
 #include <LunarTear++.h>
 #include <QVBoxLayout>
 #include <QHeaderView>
+#include "common/GameStrings.h"
 #include <QSpinBox>
 #include <QTreeWidgetItemIterator>
 #include <QScrollBar>
 #include <QApplication>
 #include <QLineEdit>
+#include <replicant/weapon.h> 
+
+using namespace replicant::raw;
+using namespace replicant::weapon;
+
+// --- Robust Field Definitions ---
+
+enum FieldType { TYPE_UINT, TYPE_INT, TYPE_FLOAT, TYPE_UINT8 };
+
+struct FieldDef {
+    const char* id;
+    const char* name;
+    size_t offset;
+    FieldType type;
+};
+
+// Main body fields - Complete mapping of RawWeaponBody
+static const std::vector<FieldDef> kBodyFields = {
+    // 0x00 - 0x0F
+    { "u00", "UInt32 0x00", offsetof(RawWeaponBody, uint32_0x00), TYPE_UINT },
+    { "u04", "UInt32 0x04", offsetof(RawWeaponBody, uint32_0x04), TYPE_UINT },
+    { "ptrJpName", "Ptr JP Name (0x08)", offsetof(RawWeaponBody, offestToJPName), TYPE_UINT },
+    { "ptrIntName", "Ptr Int Name (0x0C)", offsetof(RawWeaponBody, offsetToInternalWeaponName), TYPE_UINT },
+
+    // 0x10 - 0x2B (IDs)
+    { "weaponID", "Weapon ID", offsetof(RawWeaponBody, weaponID), TYPE_UINT },
+    { "nameStringID", "Name ID", offsetof(RawWeaponBody, nameStringID), TYPE_UINT },
+    { "descStringID", "Desc ID", offsetof(RawWeaponBody, descStringID), TYPE_UINT },
+    { "unkStringID1", "Unk Str 1", offsetof(RawWeaponBody, unkStringID1), TYPE_UINT },
+    { "unkStringID2", "Unk Str 2", offsetof(RawWeaponBody, unkStringID2), TYPE_UINT },
+    { "unkStringID3", "Unk Str 3", offsetof(RawWeaponBody, unkStringID3), TYPE_UINT },
+    { "storyStringID", "Story ID", offsetof(RawWeaponBody, storyStringID), TYPE_UINT },
+
+    // 0x2C - 0x3B
+    { "u2c", "UInt32 0x2C", offsetof(RawWeaponBody, uint32_0x2C), TYPE_UINT },
+    { "u30", "UInt32 0x30", offsetof(RawWeaponBody, uint32_0x30), TYPE_UINT },
+    { "u34", "UInt32 0x34", offsetof(RawWeaponBody, uint32_0x34), TYPE_UINT },
+    { "listOrder", "List Order", offsetof(RawWeaponBody, listOrder), TYPE_UINT },
+
+    // 0x3C - 0x47
+    { "f3c", "Float 0x3C", offsetof(RawWeaponBody, float_0x3C), TYPE_FLOAT },
+    { "u40", "UInt32 0x40", offsetof(RawWeaponBody, uint32_0x40), TYPE_UINT },
+    { "u44", "UInt32 0x44", offsetof(RawWeaponBody, uint32_0x44), TYPE_UINT },
+
+    // 0x48 - 0x53
+    { "f48", "Float 0x48", offsetof(RawWeaponBody, float_0x48), TYPE_FLOAT },
+    { "u4c", "UInt32 0x4C", offsetof(RawWeaponBody, uint32_0x4C), TYPE_UINT },
+    { "u50", "UInt32 0x50", offsetof(RawWeaponBody, uint32_0x50), TYPE_UINT },
+
+    // 0x54 - 0x5F
+    { "heightBack", "Height On Back (0x54)", offsetof(RawWeaponBody, float_0x54), TYPE_FLOAT },
+    { "u58", "UInt32 0x58", offsetof(RawWeaponBody, uint32_0x58), TYPE_UINT },
+    { "u5c", "UInt32 0x5C", offsetof(RawWeaponBody, uint32_0x5C), TYPE_UINT },
+
+    // 0x60 - 0x6B
+    { "f60", "Float 0x60", offsetof(RawWeaponBody, float_0x60), TYPE_FLOAT },
+    { "u64", "UInt32 0x64", offsetof(RawWeaponBody, uint32_0x64), TYPE_UINT },
+    { "u68", "UInt32 0x68", offsetof(RawWeaponBody, uint32_0x68), TYPE_UINT },
+
+    // 0x6C - 0x77
+    { "handDisp", "In Hand Displacement (0x6C)", offsetof(RawWeaponBody, float_0x6C), TYPE_FLOAT },
+    { "u70", "UInt32 0x70", offsetof(RawWeaponBody, uint32_0x70), TYPE_UINT },
+    { "u74", "UInt32 0x74", offsetof(RawWeaponBody, uint32_0x74), TYPE_UINT },
+
+    // 0x78 - 0x83
+    { "f78", "Float 0x78", offsetof(RawWeaponBody, float_0x78), TYPE_FLOAT },
+    { "u7c", "UInt32 0x7C", offsetof(RawWeaponBody, uint32_0x7C), TYPE_UINT },
+    { "u80", "UInt32 0x80", offsetof(RawWeaponBody, uint32_0x80), TYPE_UINT },
+
+    // 0x84 - 0x93
+    { "i84", "Int32 0x84", offsetof(RawWeaponBody, int32_0x84), TYPE_INT },
+    { "shopPrice", "Shop Price", offsetof(RawWeaponBody, shopPrice), TYPE_UINT },
+    { "knockback", "Knockback %", offsetof(RawWeaponBody, knockbackPercent), TYPE_FLOAT },
+    { "u90", "UInt32 0x90", offsetof(RawWeaponBody, uint32_0x90), TYPE_UINT },
+
+    // ... Stats/Recipes in between ...
+
+    // 0x168 - 0x170
+    { "u168", "UInt32 0x168", offsetof(RawWeaponBody, uint32_0x168), TYPE_UINT },
+    { "b16c", "UInt8 0x16C", offsetof(RawWeaponBody, uint8_0x16C), TYPE_UINT8 },
+    { "b16d", "UInt8 0x16D", offsetof(RawWeaponBody, uint8_0x16D), TYPE_UINT8 },
+    { "b16e", "UInt8 0x16E", offsetof(RawWeaponBody, uint8_0x16E), TYPE_UINT8 },
+    { "b16f", "UInt8 0x16F", offsetof(RawWeaponBody, uint8_0x16F), TYPE_UINT8 },
+    { "f170", "Float 0x170", offsetof(RawWeaponBody, float_0x170), TYPE_FLOAT },
+};
+
+// Stats sub-struct fields
+static const std::vector<FieldDef> kStatsFields = {
+    { "attack", "Attack", offsetof(WeaponStats, attack), TYPE_UINT },
+    { "magicPower", "Magic Power", offsetof(WeaponStats, magicPower), TYPE_UINT },
+    { "guardBreak", "Guard Break", offsetof(WeaponStats, guardBreak), TYPE_UINT },
+    { "armourBreak", "Armour Break", offsetof(WeaponStats, armourBreak), TYPE_UINT },
+    { "weight", "Weight", offsetof(WeaponStats, weight), TYPE_UINT },
+    { "f10", "Float 0x10", offsetof(WeaponStats, float_0x10), TYPE_FLOAT },
+    { "f18", "Float 0x18", offsetof(WeaponStats, float_0x18), TYPE_FLOAT },
+    { "f1c", "Float 0x1C", offsetof(WeaponStats, float_0x1c), TYPE_FLOAT },
+};
+
+// Recipe sub-struct fields
+static const std::vector<FieldDef> kRecipeFields = {
+    { "cost", "Upgrade Cost", offsetof(WeaponUpgradeRecipe, upgradeCost), TYPE_UINT },
+    { "id1", "Ingr 1 ID", offsetof(WeaponUpgradeRecipe, ingredientId1), TYPE_INT },
+    { "ct1", "Ingr 1 Count", offsetof(WeaponUpgradeRecipe, ingredientCount1), TYPE_UINT },
+    { "id2", "Ingr 2 ID", offsetof(WeaponUpgradeRecipe, ingredientId2), TYPE_INT },
+    { "ct2", "Ingr 2 Count", offsetof(WeaponUpgradeRecipe, ingredientCount2), TYPE_UINT },
+    { "id3", "Ingr 3 ID", offsetof(WeaponUpgradeRecipe, ingredientId3), TYPE_INT },
+    { "ct3", "Ingr 3 Count", offsetof(WeaponUpgradeRecipe, ingredientCount3), TYPE_UINT },
+};
+
+static const std::map<QString, size_t> kSubStructOffsets = {
+    { "lvl1", offsetof(RawWeaponBody, level1Stats) },
+    { "lvl2", offsetof(RawWeaponBody, level2Stats) },
+    { "lvl2rcp", offsetof(RawWeaponBody, level2Recipe) },
+    { "lvl3", offsetof(RawWeaponBody, level3Stats) },
+    { "lvl3rcp", offsetof(RawWeaponBody, level3Recipe) },
+    { "lvl4", offsetof(RawWeaponBody, level4Stats) },
+    { "lvl4rcp", offsetof(RawWeaponBody, level4Recipe) }
+};
+
+// --- Implementation ---
 
 void safeStringCopy(char* dest, const QString& src, size_t destSize) {
     QByteArray utf8 = src.toUtf8();
@@ -15,325 +136,9 @@ void safeStringCopy(char* dest, const QString& src, size_t destSize) {
     dest[destSize - 1] = '\0';
 }
 
-
 Inspector::Inspector(QWidget* parent)
     : QWidget(parent)
 {
-    m_itemNames[0] = "Medicinal Herb";
-    m_itemNames[1] = "Health Salve";
-    m_itemNames[2] = "Recovery Potion";
-    m_itemNames[3] = "Health Salve (Large)";
-    m_itemNames[4] = "Recovery Potion (Small)";
-    m_itemNames[5] = "Recovery Potion (Medium)";
-    m_itemNames[6] = "Recovery Potion (Large)";
-    m_itemNames[7] = "Recovery Potion (Max)";
-    m_itemNames[11] = "Health Elixir (Small)";
-    m_itemNames[12] = "Health Elixir (Medium)";
-    m_itemNames[13] = "Health Elixir (Large)";
-    m_itemNames[16] = "Lifesaver";
-    m_itemNames[21] = "Strength Drop";
-    m_itemNames[22] = "Strength Capsule";
-    m_itemNames[23] = "Magic Drop";
-    m_itemNames[24] = "Magic Capsule";
-    m_itemNames[25] = "Defense Drop";
-    m_itemNames[26] = "Defense Capsule";
-    m_itemNames[27] = "Spirit Drop";
-    m_itemNames[28] = "Spirit Capsule";
-    m_itemNames[31] = "Antidotal Weed";
-    m_itemNames[32] = "Echo Grass";
-    m_itemNames[33] = "Smelling Salts";
-    m_itemNames[41] = "Speed Fertilizer";
-    m_itemNames[42] = "Flowering Fertilizer";
-    m_itemNames[43] = "Bounty Fertilizer";
-    m_itemNames[46] = "Pumpkin Seed";
-    m_itemNames[47] = "Watermelon Seed";
-    m_itemNames[48] = "Melon Seed";
-    m_itemNames[49] = "Gourd Seed";
-    m_itemNames[50] = "Tomato Seed";
-    m_itemNames[51] = "Eggplant Seed";
-    m_itemNames[52] = "Bell Pepper Seed";
-    m_itemNames[53] = "Bean Seed";
-    m_itemNames[54] = "Wheat Seedling";
-    m_itemNames[55] = "Rice Plant Seedling";
-    m_itemNames[56] = "Dahlia Bulb";
-    m_itemNames[57] = "Tulip Bulb";
-    m_itemNames[58] = "Freesia Bulb";
-    m_itemNames[59] = "Red Moonflower Seed";
-    m_itemNames[60] = "Gold Moonflower Seed";
-    m_itemNames[61] = "Peach Moonflower Seed";
-    m_itemNames[62] = "Pink Moonflower Seed";
-    m_itemNames[63] = "Blue Moonflower Seed";
-    m_itemNames[64] = "Indigo Moonflower Seed";
-    m_itemNames[65] = "White Moonflower Seed";
-    m_itemNames[71] = "Pumpkin";
-    m_itemNames[72] = "Watermelon";
-    m_itemNames[73] = "Melon";
-    m_itemNames[74] = "Gourd";
-    m_itemNames[75] = "Tomato";
-    m_itemNames[76] = "Eggplant";
-    m_itemNames[77] = "Bell Pepper";
-    m_itemNames[78] = "Beans";
-    m_itemNames[79] = "Wheat";
-    m_itemNames[80] = "Rice";
-    m_itemNames[81] = "Dahlia";
-    m_itemNames[82] = "Tulip";
-    m_itemNames[83] = "Freesia";
-    m_itemNames[84] = "Red Moonflower";
-    m_itemNames[85] = "Gold Moonflower";
-    m_itemNames[86] = "Peach Moonflower";
-    m_itemNames[87] = "Pink Moonflower";
-    m_itemNames[88] = "Blue Moonflower";
-    m_itemNames[89] = "Indigo Moonflower";
-    m_itemNames[90] = "White Moonflower";
-    m_itemNames[101] = "Lugworm";
-    m_itemNames[102] = "Earthworm";
-    m_itemNames[103] = "Lure";
-    m_itemNames[111] = "Sardine";
-    m_itemNames[112] = "Carp";
-    m_itemNames[113] = "Blowfish";
-    m_itemNames[114] = "Bream";
-    m_itemNames[115] = "Shark";
-    m_itemNames[116] = "Blue Marlin";
-    m_itemNames[117] = "Dunkleosteus";
-    m_itemNames[118] = "Rainbow Trout";
-    m_itemNames[119] = "Black Bass";
-    m_itemNames[120] = "Giant Catfish";
-    m_itemNames[121] = "Royal Fish";
-    m_itemNames[122] = "Hyneria";
-    m_itemNames[123] = "Sandfish";
-    m_itemNames[124] = "Rhizodont";
-    m_itemNames[125] = "Shaman Fish";
-    m_itemNames[131] = "Aquatic Plant";
-    m_itemNames[132] = "Deadwood";
-    m_itemNames[133] = "Rusty Bucket";
-    m_itemNames[134] = "Empty Can";
-    m_itemNames[138] = "Gold Ore";
-    m_itemNames[139] = "Silver Ore";
-    m_itemNames[140] = "Copper Ore";
-    m_itemNames[141] = "Iron Ore";
-    m_itemNames[142] = "Crystal";
-    m_itemNames[143] = "Pyrite";
-    m_itemNames[144] = "Moldavite";
-    m_itemNames[145] = "Meteorite";
-    m_itemNames[146] = "Amber";
-    m_itemNames[147] = "Fluorite";
-    m_itemNames[148] = "Clay";
-    m_itemNames[153] = "Berries";
-    m_itemNames[154] = "Royal Fern";
-    m_itemNames[155] = "Tree Branch";
-    m_itemNames[156] = "Log";
-    m_itemNames[157] = "Natural Rubber";
-    m_itemNames[158] = "Ivy";
-    m_itemNames[159] = "Lichen";
-    m_itemNames[160] = "Mushroom";
-    m_itemNames[161] = "Sap";
-    m_itemNames[167] = "Mutton";
-    m_itemNames[168] = "Boar Meat";
-    m_itemNames[169] = "Wool";
-    m_itemNames[170] = "Boar Hide";
-    m_itemNames[171] = "Wolf Hide";
-    m_itemNames[172] = "Wolf Fang";
-    m_itemNames[173] = "Giant Spider Silk";
-    m_itemNames[174] = "Bat Fang";
-    m_itemNames[175] = "Bat Wing";
-    m_itemNames[176] = "Goat Meat";
-    m_itemNames[177] = "Goat Hide";
-    m_itemNames[178] = "Venison";
-    m_itemNames[179] = "Rainbow Spider Silk";
-    m_itemNames[180] = "Boar Liver";
-    m_itemNames[181] = "Scorpion Claw";
-    m_itemNames[182] = "Scorpion Tail";
-    m_itemNames[183] = "Dented Metal Board";
-    m_itemNames[184] = "Stripped Bolt";
-    m_itemNames[185] = "Broken Lens";
-    m_itemNames[186] = "Severed Cable";
-    m_itemNames[187] = "Broken Arm";
-    m_itemNames[188] = "Broken Antenna";
-    m_itemNames[189] = "Broken Motor";
-    m_itemNames[190] = "Broken Battery";
-    m_itemNames[191] = "Mysterious Switch";
-    m_itemNames[192] = "Large Gear";
-    m_itemNames[193] = "Titanium Alloy";
-    m_itemNames[194] = "Memory Alloy";
-    m_itemNames[195] = "Rusted Clump";
-    m_itemNames[196] = "Machine Oil";
-    m_itemNames[201] = "Forlorn Necklace";
-    m_itemNames[202] = "Twisted Ring";
-    m_itemNames[203] = "Broken Earring";
-    m_itemNames[204] = "Pretty Choker";
-    m_itemNames[205] = "Metal Piercing";
-    m_itemNames[206] = "Subdued Bracelet";
-    m_itemNames[207] = "Technical Guide";
-    m_itemNames[208] = "Grubby Book";
-    m_itemNames[209] = "Thick Dictionary";
-    m_itemNames[210] = "Closed Book";
-    m_itemNames[211] = "Used Coloring Book";
-    m_itemNames[212] = "Old Schoolbook";
-    m_itemNames[213] = "Dirty Bag";
-    m_itemNames[214] = "Flashy Hat";
-    m_itemNames[215] = "Leather Gloves";
-    m_itemNames[216] = "Silk Handkerchief";
-    m_itemNames[217] = "Leather Boots";
-    m_itemNames[218] = "Complex Machine";
-    m_itemNames[219] = "Elaborate Machine";
-    m_itemNames[220] = "Simple Machine";
-    m_itemNames[221] = "Stopped Clock";
-    m_itemNames[222] = "Broken Wristwatch";
-    m_itemNames[223] = "Rusty Kitchen Knife";
-    m_itemNames[224] = "Broken Saw";
-    m_itemNames[225] = "Dented Metal Bat";
-    m_itemNames[227] = "Shell";
-    m_itemNames[228] = "Gastropod";
-    m_itemNames[229] = "Bivalve";
-    m_itemNames[230] = "Seaweed";
-    m_itemNames[231] = "Empty Bottle";
-    m_itemNames[232] = "Driftwood";
-    m_itemNames[233] = "Pearl";
-    m_itemNames[234] = "Black Pearl";
-    m_itemNames[235] = "Crab";
-    m_itemNames[236] = "Starfish";
-    m_itemNames[242] = "Sea Turtle Egg";
-    m_itemNames[243] = "Broken Pottery";
-    m_itemNames[244] = "Desert Rose";
-    m_itemNames[245] = "Giant Egg";
-    m_itemNames[246] = "Damascus Steel";
-    m_itemNames[247] = "Eagle Egg";
-    m_itemNames[248] = "Chicken Egg";
-    m_itemNames[250] = "Mouse Tail";
-    m_itemNames[251] = "Lizard Tail";
-    m_itemNames[255] = "Deer Antler";
-    m_itemNames[255] = "Light Key";
-    m_itemNames[255] = "Darkness Key";
-    m_itemNames[255] = "Pressed Freesia";
-    m_itemNames[255] = "Potted Freesia";
-    m_itemNames[255] = "Freesia (Delivery)";
-    m_itemNames[255] = "Pile of Junk";
-    m_itemNames[255] = "Old Gold Coin";
-    m_itemNames[255] = "Marked Map";
-    m_itemNames[255] = "AA Keycard";
-    m_itemNames[255] = "KA Keycard";
-    m_itemNames[255] = "SA Keycard";
-    m_itemNames[255] = "TA Keycard";
-    m_itemNames[255] = "NA Keycard";
-    m_itemNames[255] = "HA Keycard";
-    m_itemNames[255] = "MA Keycard";
-    m_itemNames[255] = "YA Keycard";
-    m_itemNames[255] = "RA Keycard";
-    m_itemNames[255] = "WA Keycard";
-    m_itemNames[256] = "Moon Key";
-    m_itemNames[257] = "Star Key";
-    m_itemNames[258] = "Fine Flour";
-    m_itemNames[259] = "Coarse Flour";
-    m_itemNames[260] = "Perfume Bottle";
-    m_itemNames[261] = "Postman's Parcel";
-    m_itemNames[262] = "Lover's Letter";
-    m_itemNames[263] = "Water Filter";
-    m_itemNames[264] = "Royal Compass";
-    m_itemNames[265] = "Vapor Moss";
-    m_itemNames[266] = "Valley Spider Silk";
-    m_itemNames[267] = "Animal Guidebook";
-    m_itemNames[268] = "Ore Guidebook";
-    m_itemNames[269] = "Plant Guidebook";
-    m_itemNames[270] = "Red Book";
-    m_itemNames[271] = "Blue Book";
-    m_itemNames[272] = "Old Lady's Elixir";
-    m_itemNames[273] = "Old Lady's Elixir+";
-    m_itemNames[274] = "Parcel for The Aerie";
-    m_itemNames[275] = "Parcel for Seafront";
-    m_itemNames[276] = "Cookbook";
-    m_itemNames[277] = "Parcel for Facade";
-    m_itemNames[278] = "Max's Herbs";
-    m_itemNames[279] = "Drifting Cargo";
-    m_itemNames[280] = "Drifting Cargo 2";
-    m_itemNames[281] = "Drifting Cargo 3";
-    m_itemNames[282] = "Drifting Cargo 4";
-    m_itemNames[283] = "Old Package";
-    m_itemNames[284] = "Mermaid Tear";
-    m_itemNames[285] = "Mandrake Leaf";
-    m_itemNames[286] = "Energizer";
-    m_itemNames[287] = "Toad Oil";
-    m_itemNames[288] = "Sleep-B-Gone";
-    m_itemNames[289] = "Antidote";
-    m_itemNames[290] = "Gold Bracelet";
-    m_itemNames[291] = "Elite Kitchen Knife";
-    m_itemNames[292] = "Elevator Parts";
-    m_itemNames[293] = "Dirty Treasure Map";
-    m_itemNames[294] = "Restored Treasure Map";
-    m_itemNames[295] = "Jade Hair Ornament";
-    m_itemNames[296] = "Employee List";
-    m_itemNames[297] = "Small Safe";
-    m_itemNames[298] = "Safe Key";
-    m_itemNames[299] = "Great Tree Root";
-    m_itemNames[300] = "Eye of Power";
-    m_itemNames[301] = "Ribbon";
-    m_itemNames[302] = "Yonah's Ribbon";
-    m_itemNames[303] = "Bronze Key";
-    m_itemNames[304] = "Brass Key";
-    m_itemNames[305] = "Boar Tusk";
-    m_itemNames[306] = "Cultivator's Handbook";
-    m_itemNames[307] = "Red Bag";
-    m_itemNames[308] = "Lantern";
-    m_itemNames[309] = "Empty Lantern";
-    m_itemNames[310] = "Hold Key";
-    m_itemNames[311] = "Passageway Key";
-    m_itemNames[312] = "Goat Key";
-    m_itemNames[313] = "Lizard Key";
-    m_itemNames[314] = "Unlocking Procedure Memo";
-    m_itemNames[315] = "Red Jewel?";
-    m_itemNames[316] = "Red Flowers";
-    m_itemNames[317] = "Apples";
-    m_itemNames[318] = "[2031800]NoText";
-    m_itemNames[319] = "[2031900]NoText";
-    m_itemNames[320] = "\"Look at the Sky\"";
-    m_itemNames[321] = "\"Don't Try So Hard\"";
-    m_itemNames[322] = "\"My Birthday!\"";
-    m_itemNames[323] = "Love Letter 2/12/3340";
-    m_itemNames[324] = "Love Letter 3/28/3340";
-    m_itemNames[325] = "Love Letter 5/1/3340";
-    m_itemNames[326] = "Letter from the Mayor";
-    m_itemNames[327] = "The Postman's Request";
-    m_itemNames[328] = "The Postman's Thanks";
-    m_itemNames[329] = "Invitation from a Stranger";
-    m_itemNames[330] = "Grand Re-Opening Notice";
-    m_itemNames[331] = "Wedding Invitation";
-    m_itemNames[332] = "Letter from the King";
-    m_itemNames[333] = "Underground Research Record 1";
-    m_itemNames[334] = "Underground Research Record 2";
-    m_itemNames[335] = "Underground Research Record 3";
-    m_itemNames[336] = "Underground Research Record 4";
-    m_itemNames[337] = "Letter to the Chief";
-    m_itemNames[338] = "Letter to Two Brothers Weaponry";
-    m_itemNames[339] = "Letter to Popola";
-    m_itemNames[340] = "Letter to a Faraway Lover";
-    m_itemNames[341] = "Letter from Emil";
-    m_itemNames[342] = "Weapon Upgrade Notice";
-    m_itemNames[343] = "Letter from the Chief of The Aerie";
-    m_itemNames[352] = "Project Gestalt Report 0923";
-    m_itemNames[353] = "Project Gestalt Report 9182";
-    m_itemNames[354] = "Project Gestalt Report 10432";
-    m_itemNames[355] = "Project Gestalt Report 11242";
-    m_itemNames[512] = "World Map";
-    m_itemNames[515] = "<NIER>'s Village Map";
-    m_itemNames[516] = "Lost Shrine Area Map";
-    m_itemNames[517] = "Lost Shrine Map";
-    m_itemNames[518] = "The Aerie Map";
-    m_itemNames[519] = "Seafront Map";
-    m_itemNames[520] = "Desert Map";
-    m_itemNames[521] = "Facade Map";
-    m_itemNames[522] = "Barren Temple Map";
-    m_itemNames[523] = "Junk Heap Area Map";
-    m_itemNames[524] = "Junk Heap Map";
-    m_itemNames[525] = "Manor Map";
-    m_itemNames[526] = "Forest of Myth Map";
-    m_itemNames[527] = "Underground Facility Map";
-    m_itemNames[529] = "Shadowlord's Castle Map";
-    m_itemNames[531] = "Northern Plains Map";
-    m_itemNames[532] = "Southern Plains Map";
-    m_itemNames[533] = "Eastern Road Map";
-    m_itemNames[534] = "Beneath the Forest of Myth Map";
-    m_itemNames[535] = "Tokyo Map";
-
-
     setupUi();
     applyStyling();
     setupConnections();
@@ -392,7 +197,6 @@ void Inspector::setupConnections()
 
 void Inspector::refreshData()
 {
-    // Check if an editor widget inside the tree has focus.
     QWidget* focusedWidget = QApplication::focusWidget();
     bool isEditing = (focusedWidget != nullptr) && (focusedWidget->parentWidget() == m_treeWidget->viewport());
 
@@ -405,57 +209,77 @@ void Inspector::refreshData()
     int scrollPosition = m_treeWidget->verticalScrollBar()->value();
 
     QString selectedInternalId;
-    int selectedItemId = -1;
+    int selectedExtraId = -1;
     QTreeWidgetItem* current = m_treeWidget->currentItem();
+
     if (current) {
+        // Fallback logic for collapsed parents
+        QTreeWidgetItem* p = current->parent();
+        while (p) {
+            if (!p->isExpanded()) {
+                current = p;
+            }
+            p = p->parent();
+        }
+
         selectedInternalId = current->data(0, Qt::UserRole).toString();
-        if (selectedInternalId == "save/inventory") {
-            selectedItemId = current->data(0, Qt::UserRole + 1).toInt();
+
+        if (selectedInternalId == "save/inventory" || selectedInternalId == "save/weapon_levels") {
+            selectedExtraId = current->data(0, Qt::UserRole + 1).toInt();
         }
     }
 
     QMap<QString, bool> expansionState;
-    for (int i = 0; i < m_treeWidget->topLevelItemCount(); ++i) {
-        QTreeWidgetItem* topItem = m_treeWidget->topLevelItem(i);
-        expansionState[topItem->text(0)] = topItem->isExpanded();
-        for (int j = 0; j < topItem->childCount(); ++j) {
-            QTreeWidgetItem* childItem = topItem->child(j);
-            expansionState[topItem->text(0) + "/" + childItem->text(0)] = childItem->isExpanded();
+    QTreeWidgetItemIterator it_exp(m_treeWidget);
+    while (*it_exp) {
+        if ((*it_exp)->isExpanded()) {
+            QString path = (*it_exp)->text(0);
+            QTreeWidgetItem* p = (*it_exp)->parent();
+            while (p) {
+                path = p->text(0) + "/" + path;
+                p = p->parent();
+            }
+            expansionState[path] = true;
         }
+        ++it_exp;
     }
 
     m_treeWidget->clear();
     populateTree();
 
-    for (int i = 0; i < m_treeWidget->topLevelItemCount(); ++i) {
-        QTreeWidgetItem* topItem = m_treeWidget->topLevelItem(i);
-        if (expansionState.value(topItem->text(0), false)) {
-            topItem->setExpanded(true);
-            for (int j = 0; j < topItem->childCount(); ++j) {
-                QTreeWidgetItem* childItem = topItem->child(j);
-                if (expansionState.value(topItem->text(0) + "/" + childItem->text(0), false)) {
-                    childItem->setExpanded(true);
-                }
-            }
+    QTreeWidgetItemIterator it_restore(m_treeWidget);
+    while (*it_restore) {
+        QString path = (*it_restore)->text(0);
+        QTreeWidgetItem* p = (*it_restore)->parent();
+        while (p) {
+            path = p->text(0) + "/" + path;
+            p = p->parent();
         }
+        if (expansionState.value(path, false)) {
+            (*it_restore)->setExpanded(true);
+        }
+        ++it_restore;
     }
 
-    onSearchChanged(m_searchBox->text()); 
+    onSearchChanged(m_searchBox->text());
 
     if (!selectedInternalId.isEmpty()) {
         QTreeWidgetItemIterator it(m_treeWidget);
         while (*it) {
             QTreeWidgetItem* item = *it;
             QString internalId = item->data(0, Qt::UserRole).toString();
+
             if (internalId == selectedInternalId) {
-                if (internalId == "save/inventory") {
-                    if (item->data(0, Qt::UserRole + 1).toInt() == selectedItemId) {
+                if (internalId == "save/inventory" || internalId == "save/weapon_levels") {
+                    if (item->data(0, Qt::UserRole + 1).toInt() == selectedExtraId) {
                         m_treeWidget->setCurrentItem(item);
+                        item->setSelected(true);
                         break;
                     }
                 }
                 else {
                     m_treeWidget->setCurrentItem(item);
+                    item->setSelected(true);
                     break;
                 }
             }
@@ -464,7 +288,6 @@ void Inspector::refreshData()
     }
 
     m_treeWidget->verticalScrollBar()->setValue(scrollPosition);
-
     m_isUpdatingTree = false;
 }
 
@@ -475,10 +298,16 @@ void Inspector::populateTree()
     }
 
     auto* playerParamRoot = new QTreeWidgetItem(m_treeWidget, { "CPlayerParam" });
+    playerParamRoot->setData(0, Qt::UserRole, "root/playerParam");
     populatePlayerParamNode(playerParamRoot);
 
     auto* saveDataRoot = new QTreeWidgetItem(m_treeWidget, { "PlayerSaveData" });
+    saveDataRoot->setData(0, Qt::UserRole, "root/saveData");
     populateSaveDataNode(saveDataRoot);
+
+    auto* weaponSpecRoot = new QTreeWidgetItem(m_treeWidget, { "Weapon Specs" });
+    weaponSpecRoot->setData(0, Qt::UserRole, "root/weaponSpecs");
+    populateWeaponSpecsNode(weaponSpecRoot);
 }
 
 void Inspector::populateSaveDataNode(QTreeWidgetItem* parent)
@@ -495,10 +324,38 @@ void Inspector::populateSaveDataNode(QTreeWidgetItem* parent)
     createEditableItem(parent, "gold", data->gold, "save/gold");
     createReadOnlyItem(parent, "total_play_time", QString::number(data->total_play_time / 3600.0, 'f', 2) + " hours");
 
+    auto weaponLevelsRoot = new QTreeWidgetItem(parent, { "Weapon Levels" });
+    weaponLevelsRoot->setData(0, Qt::UserRole, "folder/weapon_levels");
+
+    for (int i = 0; i < 64; ++i) {
+
+		replicant::raw::RawWeaponBody* weaponSpec = GameData::instance().getWeaponSpecs()[i];
+		if (!weaponSpec) continue;
+		int nameId = weaponSpec->nameStringID;
+        QString name = GetGameQString(nameId);
+
+        if (name == "<NoText>" || name.isEmpty()) continue;
+
+        int8_t level = data->weaponLevels[i];   
+
+        QString valStr;
+        if (level == -1) valStr = "-1 (Not Collected)";
+        else valStr = QString::number(level);
+
+        QTreeWidgetItem* item = createEditableItem(weaponLevelsRoot, name, valStr, "save/weapon_levels");
+        item->setText(1, QString::number(level));
+        item->setData(0, Qt::UserRole + 1, i);
+    }
+
     auto inventoryRoot = new QTreeWidgetItem(parent, { "Inventory" });
+    inventoryRoot->setData(0, Qt::UserRole, "folder/inventory");
+
     for (int i = 0; i < 768; ++i) {
         uint8_t count = static_cast<uint8_t>(data->Inventory[i]);
-        QString name = m_itemNames.count(i) ? m_itemNames[i] : QString("Item ID %1").arg(i);
+        QString name = GetGameQString(2000000 + 100 * i);
+        if (name == "<NoText>") {
+            continue;
+        }
         QTreeWidgetItem* item = createEditableItem(inventoryRoot, name, count, "save/inventory");
         item->setData(0, Qt::UserRole + 1, i);
     }
@@ -516,6 +373,106 @@ void Inspector::populatePlayerParamNode(QTreeWidgetItem* parent)
     createEditableItem(parent, "defense_stat", data->defense_stat, "param/defense_stat");
     createEditableItem(parent, "magickDefense_stat", data->magickDefense_stat, "param/magickDefense_stat");
 }
+
+void Inspector::populateWeaponSpecsNode(QTreeWidgetItem* parent)
+{
+    auto specs = GameData::instance().getWeaponSpecs();
+    int index = 0;
+
+    for (auto* body : specs) {
+        if (!body) continue;
+
+        QString weaponName = GetGameQString(body->nameStringID);
+        if (weaponName.isEmpty() || weaponName == "<NoText>") {
+            weaponName = QString("Weapon %1 (ID: %2)").arg(index).arg(body->weaponID);
+        }
+
+        auto* item = new QTreeWidgetItem(parent, { weaponName });
+        QString baseId = "spec/" + QString::number(index) + "/";
+        item->setData(0, Qt::UserRole, baseId + "root");
+
+        // Helper to add fields
+        auto addFields = [&](QTreeWidgetItem* node, const std::vector<FieldDef>& defs, size_t baseOffset, const QString& prefix) {
+            for (const auto& f : defs) {
+                QVariant val;
+                void* ptr = (char*)body + baseOffset + f.offset;
+
+                if (f.type == TYPE_UINT) val = *(uint32_t*)ptr;
+                else if (f.type == TYPE_INT) val = *(int32_t*)ptr;
+                else if (f.type == TYPE_FLOAT) val = *(float*)ptr;
+                else if (f.type == TYPE_UINT8) val = *(uint8_t*)ptr;
+
+                QString fullId = baseId + prefix + f.id;
+                createEditableItem(node, f.name, val, fullId);
+            }
+            };
+
+        auto* stringsNode = new QTreeWidgetItem(item, { "String IDs" });
+        stringsNode->setData(0, Qt::UserRole, baseId + "folder/strings");
+
+        auto* unkNode = new QTreeWidgetItem(item, { "Positioning / Unknowns" });
+        unkNode->setData(0, Qt::UserRole, baseId + "folder/unks");
+
+        for (const auto& f : kBodyFields) {
+            QString sid = f.id;
+
+            QTreeWidgetItem* target = item;
+
+            // Grouping logic
+            if (sid.contains("StringID")) target = stringsNode;
+            // Catch anything that starts with u/f/b/i followed by a number, OR specific names
+            else if (sid.startsWith("u") || sid.startsWith("f") || sid.startsWith("b") || sid.startsWith("i") ||
+                sid == "heightBack" || sid == "handDisp")
+            {
+                // General props exception (keep weaponID, shopPrice, etc at root)
+                if (sid != "weaponID" && sid != "shopPrice" && sid != "listOrder" && sid != "knockback") {
+                    target = unkNode;
+                }
+            }
+
+            QVariant val;
+            void* ptr = (char*)body + f.offset;
+            if (f.type == TYPE_UINT) val = *(uint32_t*)ptr;
+            else if (f.type == TYPE_INT) val = *(int32_t*)ptr;
+            else if (f.type == TYPE_FLOAT) val = *(float*)ptr;
+            else if (f.type == TYPE_UINT8) val = *(uint8_t*)ptr;
+
+            createEditableItem(target, f.name, val, baseId + f.id);
+        }
+
+        auto addSubStruct = [&](const QString& label, const QString& prefix, const std::vector<FieldDef>& fields, size_t structOffset) {
+            auto* node = new QTreeWidgetItem(item, { label });
+            node->setData(0, Qt::UserRole, baseId + "folder/" + prefix);
+            addFields(node, fields, structOffset, prefix + "_");
+            };
+
+        addSubStruct("Level 1 Stats", "lvl1", kStatsFields, kSubStructOffsets.at("lvl1"));
+
+        auto* lvl2 = new QTreeWidgetItem(item, { "Level 2" });
+        lvl2->setData(0, Qt::UserRole, baseId + "folder/l2root");
+        addFields(lvl2, kStatsFields, kSubStructOffsets.at("lvl2"), "lvl2_");
+        auto* lvl2r = new QTreeWidgetItem(lvl2, { "Recipe -> Lvl 2" });
+        lvl2r->setData(0, Qt::UserRole, baseId + "folder/l2rec");
+        addFields(lvl2r, kRecipeFields, kSubStructOffsets.at("lvl2rcp"), "lvl2rcp_");
+
+        auto* lvl3 = new QTreeWidgetItem(item, { "Level 3" });
+        lvl3->setData(0, Qt::UserRole, baseId + "folder/l3root");
+        addFields(lvl3, kStatsFields, kSubStructOffsets.at("lvl3"), "lvl3_");
+        auto* lvl3r = new QTreeWidgetItem(lvl3, { "Recipe -> Lvl 3" });
+        lvl3r->setData(0, Qt::UserRole, baseId + "folder/l3rec");
+        addFields(lvl3r, kRecipeFields, kSubStructOffsets.at("lvl3rcp"), "lvl3rcp_");
+
+        auto* lvl4 = new QTreeWidgetItem(item, { "Level 4" });
+        lvl4->setData(0, Qt::UserRole, baseId + "folder/l4root");
+        addFields(lvl4, kStatsFields, kSubStructOffsets.at("lvl4"), "lvl4_");
+        auto* lvl4r = new QTreeWidgetItem(lvl4, { "Recipe -> Lvl 4" });
+        lvl4r->setData(0, Qt::UserRole, baseId + "folder/l4rec");
+        addFields(lvl4r, kRecipeFields, kSubStructOffsets.at("lvl4rcp"), "lvl4rcp_");
+
+        index++;
+    }
+}
+
 
 QTreeWidgetItem* Inspector::createEditableItem(QTreeWidgetItem* parent, const QString& name, const QVariant& value, const QString& internalId)
 {
@@ -543,51 +500,75 @@ void Inspector::onItemChanged(QTreeWidgetItem* item, int column)
     bool ok;
     QVariant newValue = item->text(1);
 
+    // --- Save Data / Param Handling ---
     PlayerSaveData* saveData = LunarTear::Get().Game().GetPlayerSaveData();
     CPlayerParam* playerParam = LunarTear::Get().Game().GetPlayerParam();
 
     if (internalId == "save/player_name" && saveData) {
         safeStringCopy(saveData->player_name, newValue.toString(), sizeof(saveData->player_name));
     }
-    else if (internalId == "save/current_hp" && saveData) {
-        saveData->current_hp = newValue.toInt(&ok);
-    }
-    else if (internalId == "save/current_mp" && saveData) {
-        saveData->current_mp = newValue.toFloat(&ok);
-    }
-    else if (internalId == "save/current_level" && saveData) {
-        saveData->current_level = newValue.toInt(&ok);
-    }
-    else if (internalId == "save/current_xp" && saveData) {
-        saveData->current_xp = newValue.toInt(&ok);
-    }
-    else if (internalId == "save/gold" && saveData) {
-        saveData->gold = newValue.toInt(&ok);
-    }
+    else if (internalId == "save/current_hp" && saveData) saveData->current_hp = newValue.toInt(&ok);
+    else if (internalId == "save/current_mp" && saveData) saveData->current_mp = newValue.toFloat(&ok);
+    else if (internalId == "save/current_level" && saveData) saveData->current_level = newValue.toInt(&ok);
+    else if (internalId == "save/current_xp" && saveData) saveData->current_xp = newValue.toInt(&ok);
+    else if (internalId == "save/gold" && saveData) saveData->gold = newValue.toInt(&ok);
     else if (internalId == "save/inventory" && saveData) {
         int itemId = item->data(0, Qt::UserRole + 1).toInt();
         int count = newValue.toInt(&ok);
-        if (ok && count >= 0 && count <= 255) {
-            saveData->Inventory[itemId] = count;
+        if (ok && count >= 0 && count <= 255) saveData->Inventory[itemId] = count;
+    }
+    else if (internalId == "save/weapon_levels" && saveData) {
+        int weaponIdx = item->data(0, Qt::UserRole + 1).toInt();
+        int level = newValue.toInt(&ok);
+        if (ok && level >= -128 && level <= 127) {
+            saveData->weaponLevels[weaponIdx] = static_cast<char>(level);
         }
     }
-    else if (internalId == "param/maxHP" && playerParam) {
-        playerParam->maxHP = newValue.toInt(&ok);
-    }
-    else if (internalId == "param/maxMP" && playerParam) {
-        playerParam->maxMP = newValue.toFloat(&ok);
-    }
-    else if (internalId == "param/attack_stat" && playerParam) {
-        playerParam->attack_stat = newValue.toInt(&ok);
-    }
-    else if (internalId == "param/magickAttack_stat" && playerParam) {
-        playerParam->magickAttack_stat = newValue.toInt(&ok);
-    }
-    else if (internalId == "param/defense_stat" && playerParam) {
-        playerParam->defense_stat = newValue.toInt(&ok);
-    }
-    else if (internalId == "param/magickDefense_stat" && playerParam) {
-        playerParam->magickDefense_stat = newValue.toInt(&ok);
+    else if (internalId == "param/maxHP" && playerParam) playerParam->maxHP = newValue.toInt(&ok);
+    else if (internalId == "param/maxMP" && playerParam) playerParam->maxMP = newValue.toFloat(&ok);
+    else if (internalId == "param/attack_stat" && playerParam) playerParam->attack_stat = newValue.toInt(&ok);
+    else if (internalId == "param/magickAttack_stat" && playerParam) playerParam->magickAttack_stat = newValue.toInt(&ok);
+    else if (internalId == "param/defense_stat" && playerParam) playerParam->defense_stat = newValue.toInt(&ok);
+    else if (internalId == "param/magickDefense_stat" && playerParam) playerParam->magickDefense_stat = newValue.toInt(&ok);
+
+    // --- Robust Weapon Specs Handling ---
+    else if (internalId.startsWith("spec/")) {
+        auto parts = internalId.split('/');
+        if (parts.size() < 2) return;
+
+        int index = parts[1].toInt();
+        QString fieldId = parts.mid(2).join('/');
+
+        auto specs = GameData::instance().getWeaponSpecs();
+        if (index < 0 || index >= specs.size()) return;
+        auto* body = specs[index];
+        if (!body) return;
+
+        const std::vector<FieldDef>* tableToSearch = &kBodyFields;
+        size_t baseOffset = 0;
+
+        for (auto const& [prefix, offset] : kSubStructOffsets) {
+            if (fieldId.startsWith(prefix + "_")) {
+                if (prefix.contains("rcp")) tableToSearch = &kRecipeFields;
+                else tableToSearch = &kStatsFields;
+
+                baseOffset = offset;
+                fieldId = fieldId.mid(prefix.length() + 1);
+                break;
+            }
+        }
+
+        for (const auto& f : *tableToSearch) {
+            if (f.id == fieldId) {
+                void* ptr = (char*)body + baseOffset + f.offset;
+
+                if (f.type == TYPE_UINT) *(uint32_t*)ptr = newValue.toUInt(&ok);
+                else if (f.type == TYPE_INT) *(int32_t*)ptr = newValue.toInt(&ok);
+                else if (f.type == TYPE_FLOAT) *(float*)ptr = newValue.toFloat(&ok);
+                else if (f.type == TYPE_UINT8) *(uint8_t*)ptr = static_cast<uint8_t>(newValue.toUInt(&ok));
+                break;
+            }
+        }
     }
 }
 
@@ -621,7 +602,6 @@ bool Inspector::filterItem(QTreeWidgetItem* item, const QString& filterText)
     bool shouldBeVisible = textMatches || hasVisibleChild;
     item->setHidden(!shouldBeVisible);
 
-    // Only auto-expand if there's a filter active and a child is visible
     if (hasVisibleChild && !filterText.isEmpty()) {
         item->setExpanded(true);
     }

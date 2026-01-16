@@ -5,6 +5,9 @@
 #include <QTimer>
 #include <map>
 
+// Forward declarations
+namespace replicant::raw { struct RawWeaponBody; }
+
 class QLineEdit;
 
 class Inspector : public QWidget
@@ -28,9 +31,11 @@ private:
     void populateTree();
     void populateSaveDataNode(QTreeWidgetItem* parent);
     void populatePlayerParamNode(QTreeWidgetItem* parent);
+    void populateWeaponSpecsNode(QTreeWidgetItem* parent);
 
     bool filterItem(QTreeWidgetItem* item, const QString& filterText);
 
+    // Helper to create items
     QTreeWidgetItem* createEditableItem(QTreeWidgetItem* parent, const QString& name, const QVariant& value, const QString& internalId);
     QTreeWidgetItem* createReadOnlyItem(QTreeWidgetItem* parent, const QString& name, const QVariant& value);
 
@@ -39,6 +44,5 @@ private:
     QTimer* m_autoRefreshTimer;
     QTimer* m_stateUpdateTimer;
 
-    std::map<int, QString> m_itemNames;
     bool m_isUpdatingTree = false;
 };
