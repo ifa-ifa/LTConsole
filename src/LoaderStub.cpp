@@ -1,52 +1,46 @@
 #include <Windows.h>
 #include <LunarTear.h>
 #include <string>
+#include <vector>
 #include <stdexcept>
+#include <filesystem> 
 
 typedef void (*LunarTearPluginInitFunc)(const LunarTearAPI* api, LT_PluginHandle handle);
-
-inline std::wstring to_wstring(const std::string& s) {
-	if (s.empty()) return {};
-	int size = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
-	if (size == 0) throw std::runtime_error("MultiByteToWideChar failed");
-	std::wstring ws(size - 1, L'\0'); 
-	MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, ws.data(), size);
-	return ws;
-}
-
 
 extern "C" __declspec(dllexport)
 void LunarTearPluginInit(const LunarTearAPI* api, LT_PluginHandle handle)
 {
+    api->Log(handle, LT_LOG_VERBOSE, "Stub start");
 
-	api->Log(handle, LT_LOG_VERBOSE, "Stub start");
+    char buffer[1024];
+    int outsize = api->GetModDirectory(handle, "LTCon", buffer, sizeof(buffer));
 
-	std::string buffer(1024, '\0');
-	int outsize = api->GetModDirectory(handle, "LTCon", buffer.data(), buffer.size());
-	buffer.resize(outsize);
+    if (outsize <= 0) {
+        api->Log(handle, LT_LOG_ERROR, "Stub failed: Could not get mod directory.");
+        return;
+    }
 
-	buffer += "/bin/";
-
-	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
-	DLL_DIRECTORY_COOKIE cookie = AddDllDirectory(to_wstring(buffer).c_str());
-
-
-
-	buffer += "LTConsole.dll";
-	HMODULE mainlib = LoadLibrary(buffer.c_str());
-
-	RemoveDllDirectory(cookie);
-
-	if (mainlib == 0) {
-		api->Log(handle, LT_LOG_INFO, "Stub could not load main library, LoadLibrary returned Null");
-		return;
-	}
-
-	LunarTearPluginInitFunc func = (LunarTearPluginInitFunc)GetProcAddress(mainlib, "LunarTearPluginInit");
-
-	func(api, handle);
-
-	api->Log(handle, LT_LOG_VERBOSE, "Stub end");
+    std::filesystem::path modDir(buffer);
+    std::filesystem::path dllPath = modDir / "bin" / "LTConsole.dll";
 
 
+    HMODULE mainlib = LoadLibraryExW(dllPath.c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+
+    if (mainlib == NULL) {
+        DWORD err = GetLastError();
+        std::string errStr = "Stub could not load main library. Error: " + std::to_string(err);
+        api->Log(handle, LT_LOG_ERROR, errStr.c_str());
+        return;
+    }
+
+    LunarTearPluginInitFunc func = (LunarTearPluginInitFunc)GetProcAddress(mainlib, "LunarTearPluginInit");
+
+    if (func) {
+        func(api, handle);
+    }
+    else {
+        api->Log(handle, LT_LOG_ERROR, "Stub failed: Could not find 'LunarTearPluginInit' in target DLL.");
+    }
+
+    api->Log(handle, LT_LOG_VERBOSE, "Stub end");
 }
