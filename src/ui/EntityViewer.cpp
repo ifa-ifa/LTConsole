@@ -181,16 +181,16 @@ void EntityViewer::refreshEntityList()
             info.actorId = currentActor->actor_id;
             info.rtti = getRttiName(currentActor->vtable);
 
-            if (currentActor->cparams) {
-                info.hp = currentActor->cparams->health;
-                info.x = currentActor->cparams->x_pos;
-                info.y = currentActor->cparams->y_pos;
-                info.z = currentActor->cparams->z_pos;
-            }
-            else {
+            //if (currentActor->cparams) {
+            //    info.hp = currentActor->cparams->health;
+            //    info.x = currentActor->cparams->x_pos;
+            //    info.y = currentActor->cparams->y_pos;
+            //    info.z = currentActor->cparams->z_pos;
+            //}
+            //else {
                 info.hp = -1;
                 info.x = info.y = info.z = 0.0f;
-            }
+            //}
             m_entities.push_back(info);
 
             currentActor = currentActor->next_actor_secondary;
