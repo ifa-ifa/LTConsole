@@ -48,8 +48,6 @@ std::span<replicant::raw::RawWeaponBody*> GameData::getWeaponSpecs() {
 
 }
 
-
-
 QString GameData::getCurrentPhase()
 {
     PlayerSaveData* saveData = LunarTear::Get().Game().GetPlayerSaveData();
@@ -77,7 +75,6 @@ float GameData::getPlayerRotationY()
     if (forwardX == 0.0f && forwardZ == 0.0f) return 0.0f;
     return atan2(forwardX, forwardZ) * (180.0f / PI);
 }
-
 
 
 void GameData::teleportToPoint(const QString& mapName, const QVector3D& pos, float rotY)
@@ -114,39 +111,30 @@ float GameData::getCameraYaw()
     const CameraMatrix* matrix = getCameraMatrix();
     if (!matrix) return 0.0f;
 
-    // The "forward" vector is the third column of the camera's transformation matrix.
-    // We can treat the 4x4 matrix as a flat array of 16 floats.
-    // The forward vector's components are at indices 8, 9, and 10.
+    // We can treat the 4x4 matrix as a flat array of 16 floats
+    // The forward vectors components are at indices 8 9 and 10
     const float* matrixData = &(matrix->m[0][0]);
     float forwardX = matrixData[8];
     float forwardZ = matrixData[10];
 
-
-
     return atan2f(forwardX, forwardZ);
 }
 
-// NEW FUNCTION IMPLEMENTATION
 float GameData::getCameraPitch()
 {
     const CameraMatrix* matrix = getCameraMatrix();
     if (!matrix) return 0.0f;
 
-    // Extract all three components of the forward vector (3rd column).
     const float* matrixData = &(matrix->m[0][0]);
     float forwardX = matrixData[8];
     float forwardY = matrixData[9];
     float forwardZ = matrixData[10];
 
-    // Calculate the length of the forward vector on the horizontal (X-Z) plane.
+    // Calculate the length of the forward vector on the horizontal (X-Z) plane
     float horizontalDistance = sqrtf(forwardX * forwardX + forwardZ * forwardZ);
 
-    // Calculate pitch using the standard formula, which matches the reversed code.
-    // This gives the angle of the camera looking up or down.
     return atan2f(-forwardY, horizontalDistance);
 }
-
-
 
 
 void GameData::setInvincible(bool enabled)
@@ -213,7 +201,7 @@ void GameData::setMaxItems()
 
     for itemId = 0, 767 do
         _AddItemNum(itemId, 99999) 
-    end
+    end                                                                                                                                  
 
 )");
 
@@ -225,8 +213,3 @@ void GameData::setPlayerLevel(int level)
     LunarTear::Get().QueuePhaseScriptExecution(command.toStdString());
 }
 
-void GameData::setPlayerCharacter(int id)
-{
-    QString command = QString("_SetPlayerModel(%1)").arg(id);
-    LunarTear::Get().QueuePhaseScriptExecution(command.toStdString());
-}

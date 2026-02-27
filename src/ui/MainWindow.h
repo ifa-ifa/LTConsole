@@ -9,7 +9,6 @@
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 
-
 public:
 
 	MainWindow();
@@ -25,6 +24,7 @@ private:
 	QDockWidget* entityViewerDock;
 	QDockWidget* infoWidgetDock;
 	QDockWidget* inspectorDock;
+	QDockWidget* cutscenePlayerDock;
 
 	QTimer* m_saveStateTimer;
 

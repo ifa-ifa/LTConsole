@@ -12,48 +12,6 @@
 #include <QTextDocumentFragment>
 #include <iostream>
 
-
-// function to manually and reliably translate a QKeyEvent to a QChar
-// using the WinAPI. This is necessary becuase the game
-// interferes with the keyboard input
-QChar getCharFromKeyEvent(QKeyEvent* e)
-{
-    BYTE keyboardState[256];
-    if (!GetKeyboardState(keyboardState)) {
-        return QChar();
-    }
-
-    if (e->modifiers() & Qt::ShiftModifier) {
-        keyboardState[VK_SHIFT] |= 0x80;
-    }
-    else {
-        keyboardState[VK_SHIFT]  &= ~0x80;
-    }
-    if (e->modifiers() & Qt::ControlModifier) {
-        keyboardState[VK_CONTROL] |= 0x80;
-    }
-    else {
-        keyboardState[VK_CONTROL] &= ~0x80;
-    }
-    if (e->modifiers() & Qt::AltModifier) {
-        keyboardState[VK_MENU] |= 0x80;
-    }
-    else {
-
-        keyboardState[VK_MENU] &= ~0x80;
-    }
-
-    wchar_t buffer[2] = { 0,0 };
-    int res = ToUnicode(e->nativeVirtualKey(), e->nativeScanCode(), keyboardState, buffer, 2, 0);
-
-    if (res > 0) {
-        return QChar(buffer[0]);
-    }
-
-    return QChar(); 
-}
-
-
 Terminal::Terminal(QWidget* parent)
     : QPlainTextEdit(parent),
     m_prompt(">> "),
@@ -71,6 +29,10 @@ Terminal::Terminal(QWidget* parent)
         "QPlainTextEdit:focus {"
         "    border: 1px solid #61afef;"
         "}");
+
+    if (GetKeyState(VK_CAPITAL) & 0x0001) {
+        m_capsToggled = true;
+    }
 
     insertPrompt();
 }
@@ -100,19 +62,72 @@ void Terminal::appendOutput(const QString& text)
     setFocus();
 }
 
+void Terminal::focusOutEvent(QFocusEvent* e)
+{
+    m_shiftHeld = false;
+    m_ctrlHeld = false;
+    QPlainTextEdit::focusOutEvent(e);
+}
+
+void Terminal::keyReleaseEvent(QKeyEvent* e)
+{
+    if (e->key() == Qt::Key_Shift)   m_shiftHeld = false;
+    if (e->key() == Qt::Key_Control) m_ctrlHeld = false;
+
+    QPlainTextEdit::keyReleaseEvent(e);
+}
+
 void Terminal::keyPressEvent(QKeyEvent* e)
 {
-    if (isReadOnly()) {
-        if (e->matches(QKeySequence::Copy)) {
-            copySelection();
-        }
-        return;
+
+    if (e->key() == Qt::Key_Shift) {
+        m_shiftHeld = true; return;
+    }
+    if (e->key() == Qt::Key_Control) {
+        m_ctrlHeld = true; return;
+    }
+    if (e->key() == Qt::Key_CapsLock) {
+        m_capsToggled = !m_capsToggled; return;
     }
 
-    if (e->matches(QKeySequence::Copy)) {
-        copySelection();
-        return;
+    if (m_ctrlHeld)
+    {
+        switch (e->key()) {
+        case Qt::Key_A:
+        {
+
+            QTextCursor cursor = textCursor();
+            cursor.setPosition(m_inputStartPosition);
+            cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+            setTextCursor(cursor);
+            return;
+        }
+        case Qt::Key_C:
+            copySelection();
+            return;
+        case Qt::Key_X:
+            if (!isReadOnly() && textCursor().hasSelection() && textCursor().selectionStart() >= m_inputStartPosition) {
+                cut();
+            }
+            return;
+        case Qt::Key_V:
+            if (!isReadOnly()) paste();
+            return;
+
+        case Qt::Key_Left:
+        case Qt::Key_Right:
+        case Qt::Key_Backspace:
+        case Qt::Key_Delete:
+        case Qt::Key_Home:
+        case Qt::Key_End:
+            break;
+
+        default:
+            return;
+        }
     }
+
+
     if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) {
         onCommandEntered();
         return;
@@ -126,30 +141,80 @@ void Terminal::keyPressEvent(QKeyEvent* e)
         return;
     }
 
-    QTextCursor cursor = textCursor();
 
-    if (cursor.position() < m_inputStartPosition || (cursor.hasSelection() && cursor.anchor() < m_inputStartPosition))
+    QTextCursor cursor = textCursor();
+    bool isEditingKey = (e->key() == Qt::Key_Backspace || e->key() == Qt::Key_Delete);
+    bool isNavKey = (e->key() == Qt::Key_Left || e->key() == Qt::Key_Right ||
+        e->key() == Qt::Key_Home || e->key() == Qt::Key_End ||
+        e->key() == Qt::Key_PageUp || e->key() == Qt::Key_PageDown);
+
+
+    if (isEditingKey && cursor.hasSelection())
     {
-        if (e->text().isEmpty() && e->key() != Qt::Key_Backspace && e->key() != Qt::Key_Delete) {
+        if (cursor.selectionStart() < m_inputStartPosition)
+        {
+            if (cursor.selectionEnd() <= m_inputStartPosition) {
+                return;
+            }
+
+
+            cursor.setPosition(m_inputStartPosition);
+            cursor.setPosition(textCursor().selectionEnd(), QTextCursor::KeepAnchor);
+            setTextCursor(cursor);
+
+            QPlainTextEdit::keyPressEvent(e);
+            return;
+        }
+    }
+
+    if (cursor.position() < m_inputStartPosition)
+    {
+        if (isNavKey || e->matches(QKeySequence::Copy)) {
             QPlainTextEdit::keyPressEvent(e);
         }
         return;
     }
 
     if (e->key() == Qt::Key_Backspace && !cursor.hasSelection() && cursor.position() == m_inputStartPosition) {
+        return; 
+    }
+
+    if (e->key() == Qt::Key_Delete || isNavKey || isEditingKey) {
+        QPlainTextEdit::keyPressEvent(e);
         return;
     }
 
-    QChar ch = getCharFromKeyEvent(e);
 
-    if (!ch.isNull() && ch.isPrint())
+    QChar inputChar;
+    int key = e->key();
+
+    if (key >= Qt::Key_A && key <= Qt::Key_Z) {
+        bool isUpper = m_shiftHeld ^ m_capsToggled;
+        inputChar = isUpper ? QChar(key) : QChar(key).toLower();
+    }
+    else if (m_shiftHeld && key >= Qt::Key_0 && key <= Qt::Key_9) {
+        const char* symbols = ")!@#$%^&*(";
+        if (key - Qt::Key_0 < 10) inputChar = QChar(symbols[key - Qt::Key_0]);
+    }
+    else if (key == Qt::Key_Space) {
+        inputChar = ' ';
+    }
+    else {
+        if (!e->text().isEmpty()) {
+            inputChar = e->text().at(0);
+            if (inputChar.isLetter()) {
+                bool isUpper = m_shiftHeld ^ m_capsToggled;
+                inputChar = isUpper ? inputChar.toUpper() : inputChar.toLower();
+            }
+        }
+    }
+
+    if (!inputChar.isNull() && inputChar.isPrint())
     {
-        insertPlainText(QString(ch));
-        return;
+        insertPlainText(QString(inputChar));
     }
-
-    QPlainTextEdit::keyPressEvent(e);
 }
+
 
 void Terminal::contextMenuEvent(QContextMenuEvent* e)
 {

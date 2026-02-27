@@ -27,11 +27,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(LTCONSOLE_SOURCES
 	"src/LTConsole.cpp"
 	"src/ui/MainWindow.cpp"
- "src/ui/Terminal.cpp" "src/ui/Terminal.h"  "src/Bindings.cpp" "src/LuaConsoleManager.h" "src/LuaConsoleManager.cpp"   "src/ui/Atlas.cpp" "src/ui/MapView.h" "src/ui/MapView.cpp" "src/ui/Atlas.h" "src/util/AtlasImporter.h" "src/util/AtlasImporter.cpp" "src/GameData.h" "src/GameData.cpp" "src/Callbacks.h" "src/Callbacks.cpp"  "src/ui/Toolbox.h" "src/ui/Toolbox.cpp" "src/Patch.cpp" "src/Patch.h" "src/ui/EntityViewer.h" "src/ui/EntityViewer.cpp" "src/ui/InfoWidget.h" "src/ui/InfoWidget.cpp" "src/ui/Inspector.h" "src/ui/Inspector.cpp" "src/common/GameStrings.cpp")
+ "src/ui/Terminal.cpp" "src/ui/Terminal.h"  "src/Bindings.cpp" "src/LuaConsoleManager.h" "src/LuaConsoleManager.cpp"   "src/ui/Atlas.cpp" "src/ui/MapView.h" "src/ui/MapView.cpp" "src/ui/Atlas.h" "src/util/AtlasImporter.h" "src/util/AtlasImporter.cpp" "src/GameData.h" "src/GameData.cpp" "src/Callbacks.h" "src/Callbacks.cpp"  "src/ui/Toolbox.h" "src/ui/Toolbox.cpp" "src/Patch.cpp" "src/Patch.h" "src/ui/EntityViewer.h" "src/ui/EntityViewer.cpp" "src/ui/InfoWidget.h" "src/ui/InfoWidget.cpp" "src/ui/Inspector.h" "src/ui/Inspector.cpp" "src/common/GameStrings.cpp" "src/ui/CutscenePlayer.h"  "src/ui/CutscenePlayer.cpp")
 
 
 add_library(LTConsole SHARED ${LTCONSOLE_SOURCES})
-add_library(LTConsoleLoadStub SHARED "src/LoaderStub.cpp")
+add_library(LTConsoleLoadStub SHARED "src/LoaderStub.cpp" )
 
 add_executable(LTConsole_TEST ${LTCONSOLE_SOURCES})
 

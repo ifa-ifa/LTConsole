@@ -522,7 +522,7 @@ void Atlas::updateMapListHighlight()
     }
 }
 
-QPointF Atlas::gameToPixel(const QVector3D& gamePos) {
+QPointF Atlas::gameToPixel(const QVector3D& gamePos) const {
     if (!m_currentCalibration.isCalibrated) return QPointF();
     double pixelX = (gamePos.x() - m_currentCalibration.offsetX) / m_currentCalibration.scaleX;
     double pixelY = (gamePos.z() - m_currentCalibration.offsetY) / m_currentCalibration.scaleY;

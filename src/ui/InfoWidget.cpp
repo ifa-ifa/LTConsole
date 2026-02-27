@@ -87,14 +87,9 @@ InfoWidget::InfoWidget()
     QLabel* artlabel = new QLabel(htmlText, this);
     artlabel->setStyleSheet("QWidget { font-size: 4px; }");
 
-    QLabel* infoLabel = new QLabel(" LTConsole\n v1.0.2\n ifaifa\n");
-    
-    QLabel* patchLabel = new QLabel(" Update Notes:\n\n v1.0.1\n - Added Inspector\n - Added dock layout saving\n - Fixed crash while using noclip\n v1.0.2\n - Fixed stutter cuased by max stats");
-
-
+    QLabel* infoLabel = new QLabel(" LTConsole -- v1.0.2 -- ifaifa\n");
+    QLabel* patchLabel = new QLabel(" Update Notes:\n\n v1.0.1\n - Added Inspector\n - Added dock layout saving\n - Fixed crash while using noclip\n v1.0.2\n - Fixed stutter cuased by max stats\n v1.0.3\n - Fixed crash using dark wall\n - Added weapon specs and weapon levels \n  to Inspector\n");
     QLabel* cheerLabel = new QLabel(" (You're doing great !!!!) ");
-    
-
 
     
     QGridLayout* layout = new QGridLayout(this);
@@ -107,6 +102,14 @@ InfoWidget::InfoWidget()
     layout->setColumnStretch(0, 0); // Column 0 should not stretch
     layout->setColumnStretch(1, 0); // Column 1 should not stretch
     layout->setColumnStretch(2, 1);
+
+    infoLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    patchLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    cheerLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    layout->setRowStretch(0, 0);
+    layout->setRowStretch(1, 0);
+    layout->setRowStretch(2, 0);
+    layout->setRowStretch(3, 1);
 
     this->setLayout(layout);
 }

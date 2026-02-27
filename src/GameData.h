@@ -33,7 +33,6 @@ public:
     void setMaxMoney();
     void setMaxItems();
     void setPlayerLevel(int level);
-    void setPlayerCharacter(int id);
 
     
 

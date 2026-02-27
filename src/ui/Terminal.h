@@ -20,6 +20,8 @@ signals:
     void commandEntered(const QString& command);
 
 protected:
+    void focusOutEvent(QFocusEvent* e) override;
+    void keyReleaseEvent(QKeyEvent* e) override;
     void keyPressEvent(QKeyEvent* e) override;
     void contextMenuEvent(QContextMenuEvent* e) override;
 
@@ -35,4 +37,9 @@ private:
     int m_inputStartPosition;
     QStringList m_history;
     int m_historyPos;
+
+    bool m_shiftHeld;
+    bool m_ctrlHeld;
+    bool m_capsToggled;
+
 };

@@ -62,7 +62,7 @@ private:
     void populatePointsTable();
     void updateCalibrationUI();
     void updateMapListHighlight();
-    QPointF gameToPixel(const QVector3D& gamePos);
+    QPointF gameToPixel(const QVector3D& gamePos) const;
 
     QListWidget* m_mapList;
     QTableWidget* m_pointsTable;

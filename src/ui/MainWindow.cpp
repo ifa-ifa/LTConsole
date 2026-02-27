@@ -1,6 +1,7 @@
 #include <QMainWindow>
 #include "MainWindow.h"
 #include "Terminal.h"
+#include "CutscenePlayer.h"
 #include "Atlas.h"
 #include "LuaConsoleManager.h"
 #include <QApplication>
@@ -58,6 +59,7 @@ MainWindow::MainWindow() {
     InfoWidget* infoWidget = new InfoWidget();
     Inspector* inspector = new Inspector();
 	Terminal* terminal = new Terminal();
+    CutscenePlayer* cutscenePlayer = new CutscenePlayer();
 
     uint64_t termId = LuaConsoleManager::instance().registerTerminal(terminal);
    
@@ -94,6 +96,10 @@ MainWindow::MainWindow() {
     infoWidgetDock->setObjectName("InfoDock");
     infoWidgetDock->setWidget(infoWidget);
 
+    cutscenePlayerDock = new QDockWidget("Cutscene Player", this);
+    cutscenePlayerDock->setObjectName("CutscenePlayerDock");
+    cutscenePlayerDock->setWidget(cutscenePlayer);
+
     addDockWidget(Qt::BottomDockWidgetArea, terminalDock);
     addDockWidget(Qt::LeftDockWidgetArea, atlasDock);
     addDockWidget(Qt::RightDockWidgetArea, toolboxDock);
@@ -101,6 +107,7 @@ MainWindow::MainWindow() {
     tabifyDockWidget(toolboxDock, entityViewerDock);
     addDockWidget(Qt::RightDockWidgetArea, infoWidgetDock);
     tabifyDockWidget(entityViewerDock, inspectorDock);
+    tabifyDockWidget(entityViewerDock, cutscenePlayerDock);
 
     this->setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AllowTabbedDocks);
 
@@ -112,6 +119,7 @@ MainWindow::MainWindow() {
     windowMenu->addAction(entityViewerDock->toggleViewAction());
     windowMenu->addAction(inspectorDock->toggleViewAction());
     windowMenu->addAction(infoWidgetDock->toggleViewAction());
+    windowMenu->addAction(cutscenePlayerDock->toggleViewAction());
 
     QString modBasePath = QString::fromStdString(LunarTear::Get().GetModDirectory("LTCon"));
 
